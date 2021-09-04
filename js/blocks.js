@@ -67,21 +67,16 @@ BLOCK.WOOD = {
 	}
 };
 
-// TNT
-BLOCK.TNT = {
+// TORCH
+BLOCK.TORCH = {
 	id: 4,
 	spawnable: true,
 	transparent: false,
-	selflit: false,
+	selflit: true,
+	isLight: true,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir )
-	{
-		if ( dir == DIRECTION.UP || dir == DIRECTION.DOWN )
-			return [ 10/16, 0/16, 11/16, 1/16 ];
-		else
-			return [ 8/16, 0/16, 9/16, 1/16 ];
-	}
+	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 8/16, 1/16, 9/16, 2/16 ]; }
 };
 
 // Bookcase
@@ -90,6 +85,8 @@ BLOCK.BOOKCASE = {
 	spawnable: true,
 	transparent: false,
 	selflit: false,
+	isLight: true,
+	intensity: 2,
 	gravity: false,
 	fluid: false,
 	texture: function( world, lightmap, lit, x, y, z, dir )
@@ -107,6 +104,8 @@ BLOCK.LAVA = {
 	spawnable: false,
 	transparent: true,
 	selflit: true,
+	isLight: true,
+	intensity: 5,
 	gravity: true,
 	fluid: true,
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 13/16, 14/16, 14/16, 15/16 ]; }
@@ -211,6 +210,7 @@ BLOCK.DIAMOND = {
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 8/16, 1/16, 9/16, 2/16 ]; }
 };
 
+
 // Obsidian
 BLOCK.OBSIDIAN = {
 	id: 16,
@@ -255,6 +255,23 @@ BLOCK.WATER = {
 	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 3/16, 2/16, 4/16 ]; }
 };
 
+// TNT
+BLOCK.TNT = {
+	id: 20,
+	spawnable: true,
+	transparent: false,
+	selflit: false,
+	gravity: false,
+	fluid: false,
+	texture: function( world, lightmap, lit, x, y, z, dir )
+	{
+		if ( dir == DIRECTION.UP || dir == DIRECTION.DOWN )
+			return [ 10/16, 0/16, 11/16, 1/16 ];
+		else
+			return [ 8/16, 0/16, 9/16, 1/16 ];
+	}
+};
+
 
 // fromId( id )
 //
@@ -268,43 +285,58 @@ BLOCK.fromId = function( id )
 	return null;
 }
 
-// pushVertices( vertices, world, lightmap, x, y, z )
+// pushVertices( vertices, world, x, y, z )
 //
 // Pushes the vertices necessary for rendering a
 // specific block into the array.
 
-BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
+let lightMag = function(min,max) {
+	let a = [];
+	for( let i=0 ; i<=15 ; ++i ) { 
+		a[i] = min+((i/15)*(max-min));
+	}
+	return a;
+}(0.1,1.0);
+
+
+BLOCK.pushVertices = function( vertices, world, x, y, z )
 {
+
 	var blocks = world.blocks;
-	var blockLit = z >= lightmap[x][y];
-	var block = blocks[x][y][z];
+	var light  = world.light;
+	var block  = blocks[x][y][z];
 	var bH = block.fluid && ( z == world.sz - 1 || !blocks[x][y][z+1].fluid ) ? 0.8 : 1.0;
 	
 	// Top
 	if ( z == world.sz - 1 || world.blocks[x][y][z+1].transparent || block.fluid )
 	{
-		var c = block.texture( world, lightmap, blockLit, x, y, z, DIRECTION.UP );
+		var c = block.texture( world, null, null, x, y, z, DIRECTION.UP );
 
-		var lightMultiplier = z >= lightmap[x][y] ? 1.0 : 0.6;
-		if ( block.selflit ) lightMultiplier = 1.0;
-		
-		let one = 1.0005; //1.0;
+		let lightNum = z>=world.sz-1 ? 0 : light[x][y][z+1];
+		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
+		//console.log( 'top['+x+']['+y+']='+lightMultiplier );
+
+//		if( Math.floor(BLOCK._player.body.pos.x)==Math.floor(x) && Math.floor(BLOCK._player.body.pos.y)==Math.floor(y) && z!=15) {
+//			console.log( 'at['+x+']['+y+']['+z+']='+lightNum+' : '+lightMultiplier );
+//		}
+
 
 		pushQuad(
 			vertices,
 			[ x, y, z + bH, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + one, y, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + one, y + one, z + bH, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y + one, z + bH, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x + 1.0, y, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x + 1.0, y + 1.0, z + bH, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
+			[ x, y + 1.0, z + bH, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
 		);
 	}
 	
 	// Bottom
 	if ( z == 0 || world.blocks[x][y][z-1].transparent )
 	{
-		var c = block.texture( world, lightmap, blockLit, x, y, z, DIRECTION.DOWN );
+		var c = block.texture( world, null, null, x, y, z, DIRECTION.DOWN );
 		
-		var lightMultiplier = block.selflit ? 1.0 : 0.6;
+		let lightNum = z<=0 ? 0 : light[x][y][z-1];
+		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 		
 		pushQuad(
 			vertices,							
@@ -318,10 +350,10 @@ BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
 	// Front
 	if ( y == 0 || world.blocks[x][y-1][z].transparent )
 	{
-		var c = block.texture( world, lightmap, blockLit, x, y, z, DIRECTION.FORWARD );
+		var c = block.texture( world, null, null, x, y, z, DIRECTION.FORWARD );
 		
-		var lightMultiplier = ( y == 0 || z >= lightmap[x][y-1] ) ? 1.0 : 0.6;
-		if ( block.selflit ) lightMultiplier = 1.0;
+		let lightNum = y<=0 ? 0 : light[x][y-1][z];
+		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 		
 		pushQuad(
 			vertices,
@@ -335,9 +367,10 @@ BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
 	// Back
 	if ( y == world.sy - 1 || world.blocks[x][y+1][z].transparent )
 	{
-		var c = block.texture( world, lightmap, blockLit, x, y, z, DIRECTION.BACK );
+		var c = block.texture( world, null, null, x, y, z, DIRECTION.BACK );
 		
-		var lightMultiplier = block.selflit ? 1.0 : 0.6;
+		let lightNum = y>=world.sy-1 ? 0 : light[x][y+1][z];
+		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 		
 		pushQuad(
 			vertices,
@@ -351,9 +384,10 @@ BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
 	// Left
 	if ( x == 0 || world.blocks[x-1][y][z].transparent )
 	{
-		var c = block.texture( world, lightmap, blockLit, x, y, z, DIRECTION.LEFT );
+		var c = block.texture( world, null, null, x, y, z, DIRECTION.LEFT );
 		
-		var lightMultiplier = block.selflit ? 1.0 : 0.6;
+		let lightNum = x<=0 ? 0 : light[x-1][y][z];
+		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 		
 		pushQuad(
 			vertices,
@@ -367,10 +401,10 @@ BLOCK.pushVertices = function( vertices, world, lightmap, x, y, z )
 	// Right
 	if ( x == world.sx - 1 || world.blocks[x+1][y][z].transparent )
 	{
-		var c = block.texture( world, lightmap, blockLit, x, y, z, DIRECTION.RIGHT );
+		var c = block.texture( world, null, null, x, y, z, DIRECTION.RIGHT );
 		
-		var lightMultiplier = ( x == world.sx - 1 || z >= lightmap[x+1][y] ) ? 1.0 : 0.6;
-		if ( block.selflit ) lightMultiplier = 1.0;
+		let lightNum = x>=world.sx-1 ? 0 : light[x+1][y][z];
+		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 		
 		pushQuad(
 			vertices,

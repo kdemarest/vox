@@ -4,26 +4,30 @@ class World {
 	World() {
 	}
 	init( sx, sy, sz ) {
-	// Initialise world array
-		this.blocks = new Array( sx );
-		for ( var x = 0; x < sx; x++ )
-		{
-			this.blocks[x] = new Array( sy );
-			for ( var y = 0; y < sy; y++ )
-			{
-				this.blocks[x][y] = new Array( sz );
-			}
-		}
 		this.sx = sx;
 		this.sy = sy;
 		this.sz = sz;
 
-		for ( var x = 0; x < this.sx; x++ )
-			for ( var y = 0; y < this.sy; y++ )
-				for ( var z = 0; z < this.sz; z++ )
-					this.blocks[x][y][z] = BLOCK.AIR;
+		function array3(sx,sy,sz,initFn) {
+			let a = new Array( sx );
+			for ( var x = 0; x < sx; x++ )
+			{
+				a[x] = new Array( sy );
+				for ( var y = 0; y < sy; y++ )
+				{
+					a[x][y] = new Array( sz );
+				}
+			}
 
-		this.players = {};
+			for ( var x = 0; x < sx; x++ )
+				for ( var y = 0; y < sy; y++ )
+					for ( var z = 0; z < sz; z++ )
+						a[x][y][z] = initFn(x,y,z);
+			return a;
+		}
+
+		this.blocks = array3(sx,sy,sz,()=>BLOCK.AIR);
+		this.light  = array3(sx,sy,sz,()=>0);
 
 		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, 16 );
 

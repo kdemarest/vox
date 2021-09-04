@@ -422,6 +422,7 @@ Module.add('renderer',function(){
 				for ( var y = 0; y < world.sy; y += chunkSize ) {
 					for ( var z = 0; z < world.sz; z += chunkSize ) {
 						chunks.push( {
+							index: [ Math.floor(x/chunkSize), Math.floor(y/chunkSize), Math.floor(z/chunkSize) ],
 							start: [ x, y, z ],
 							end: [ Math.min( world.sx, x + chunkSize ), Math.min( world.sy, y + chunkSize ), Math.min( world.sz, z + chunkSize ) ],
 							dirty: true
@@ -437,10 +438,20 @@ Module.add('renderer',function(){
 
 		onBlockChanged( x, y, z )
 		{
+			brainlessLight(this.world);
+			let cx = Math.floor(x/this.chunkSize);
+			let cy = Math.floor(y/this.chunkSize);
+			let cz = Math.floor(z/this.chunkSize);
+
 			var chunks = this.chunks;
 			
 			for ( var i = 0; i < chunks.length; i++ )
 			{
+				// Because light might extend quite far, we just dirty ALL adjacent chunks.
+				if( Math.abs(cx-chunks[i].index[0])<=1 && Math.abs(cy-chunks[i].index[1])<=1 && Math.abs(cz-chunks[i].index[2])<=1 ) {
+					chunks[i].dirty = true;
+				}
+
 				// Neighbouring chunks are updated as well if the block is on a chunk border
 				// Also, all chunks below the block are updated because of lighting
 				if ( x >= chunks[i].start[0] && x < chunks[i].end[0] && y >= chunks[i].start[1] && y < chunks[i].end[1] && z >= chunks[i].start[2] && z < chunks[i].end[2] )
@@ -467,31 +478,13 @@ Module.add('renderer',function(){
 				if ( chunk.dirty )
 				{
 					var vertices = [];
-					
-					// Create map of lowest blocks that are still lit
-					var lightmap = {};
-					for ( var x = chunk.start[0] - 1; x < chunk.end[0] + 1; x++ )
-					{
-						lightmap[x] = {};
-						
-						for ( var y = chunk.start[1] - 1; y < chunk.end[1] + 1; y++ )
-						{
-							for ( var z = world.sz - 1; z >= 0; z-- )
-							{
-								lightmap[x][y] = z;
-								if ( !world.getBlock( x, y, z ).transparent ) {
-									break;
-								}
-							}
-						}
-					}
 
 					// Add vertices for blocks
 					for ( var x = chunk.start[0]; x < chunk.end[0]; x++ ) {
 						for ( var y = chunk.start[1]; y < chunk.end[1]; y++ ) {
 							for ( var z = chunk.start[2]; z < chunk.end[2]; z++ ) {
 								if ( world.blocks[x][y][z] == BLOCK.AIR ) continue;
-								BLOCK.pushVertices( vertices, world, lightmap, x, y, z );
+								BLOCK.pushVertices( vertices, world, x, y, z );
 							}
 						}
 					}

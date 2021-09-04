@@ -108,7 +108,7 @@ let MapMaker = class {
 			}
 
 			if( type.isLight ) {
-//				new Entity.Mesh('itemJustLight').setXY(x,y,1.5);
+				blocks[bx][by][wz+2] = BLOCK.TORCH;
 			}
 
 		});

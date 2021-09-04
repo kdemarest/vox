@@ -34,14 +34,14 @@ Module.add( 'main', ()=> {
 	`#.....######################################\n`+
 	`#####+##..B.........ttttttttttttttttt#######\n`+
 	`##.................########::::#####tt######\n`+
-	`##....t..::.N.......##...####:::######t#####\n`+
-	`##....%..::NCN......##...#::::::##:###t#####\n`+
-	`##.........N.....-:::-..:::::::##::###t#####\n`+
-	`##...........###+#::::..::::::::::::.#t#####\n`+
-	`##..444......###.:::::..:::::::::::#.#t#####\n`+
-	`##..444......==..:::::&#::::::::::::...#####\n`+
-	`##...4...#.#####.-:::-.::::::::::::.....####\n`+
-	`##www4www#.#¥.¥#........:::::::::::.......##\n`+
+	`##.......::.N.......www..####:::######t#####\n`+
+	`##....%..::NCN......##w..#::::::##:###t#####\n`+
+	`##....*..........-:::-w.:::::::##::###t#####\n`+
+	`##...........###+#::::w.::::::::::::.#t#####\n`+
+	`##..444......###.:::::w.:::::::::::#.#t#####\n`+
+	`##..444......==..:::::w#::::::::::::...#####\n`+
+	`##...4...#.#####.-:::-w::::::::::::.....####\n`+
+	`##www4www#.#¥.¥#......w.:::::::::::.......##\n`+
 	`##www4ww##.#¥¥¥#........#::::::::::.......##\n`+
 	`##www4ww##.#¥¥¥#........#::::::::::.......##\n`+
 	`##wwwwww##.&#..#..N.......::::::::...MM...##\n`+
@@ -208,7 +208,7 @@ Module.add( 'playerControls', ()=> {
 
 });
 
-window.addEventListener('DOMContentLoaded', function(){
+function main(){
 	Module.realize();
 
 	Random.Pseudo.seed(12345);
@@ -220,6 +220,7 @@ window.addEventListener('DOMContentLoaded', function(){
 	world.createFlatWorld( 16 );
 
 	mapMaker.makeIntoWorld(world);
+	brainlessLight(world);
 
 	
 	// Set up renderer
@@ -231,6 +232,9 @@ window.addEventListener('DOMContentLoaded', function(){
 	let player = new Player();
 	player.body.setWorld( world );
 	player.viewMaterial.setMaterialSelector( "materialSelector" );
+
+	// debug only
+	BLOCK._player = player;
 
 	let canvas = document.getElementById('renderSurface');
 	let controls = new PlayerControls(canvas,player.body);
@@ -257,8 +261,9 @@ window.addEventListener('DOMContentLoaded', function(){
 	}
 
 	window.requestAnimationFrame(window.tick);
-	
-});
+}
+
+window.addEventListener('DOMContentLoaded', main);
 
 </script>
 </body>
