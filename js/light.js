@@ -198,9 +198,14 @@ Light.Caster = class {
 
 function brainlessLight(world) {
 	let blocks = world.blocks;
-	let light = world.light;
+	let lightMap = world.lightMap;
 
-	function cast(cx,cy,cz,mag) {
+	function cast(cx,cy,cz,light) {
+		let mag = light.mag;
+		let r = light.r;
+		let g = light.g;
+		let b = light.b;
+
 		for( let x=-mag ; x<=mag ; ++x ) {
 			if( cx+x<0 || cx+x>=world.sx ) {
 				continue;
@@ -216,8 +221,12 @@ function brainlessLight(world) {
 					let mx = 1+mag-Math.abs(x);
 					let my = 1+mag-Math.abs(y);
 					let mz = 1+mag-Math.abs(z);
-					light[cx+x][cy+y][cz+z] = Math.max( light[cx+x][cy+y][cz+z], Math.min(mx, my, mz) ); // Math.floor( Math.sqrt(mx*mx+my*my+mz*mz) ) ); //mx, my, 0 ); //my, mz );
-//					console.log(x,y,z,light[cx+x][cy+y][cz+z]);
+					
+					let m = Math.min(mx, my, mz);
+					let a = lightMap[cx+x][cy+y][cz+z];
+					a[0] = Math.floor( Math.max( a[0], m*r ) );
+					a[1] = Math.floor( Math.max( a[1], m*g ) );
+					a[2] = Math.floor( Math.max( a[2], m*b ) );
 				}
 			}
 		}
@@ -226,7 +235,10 @@ function brainlessLight(world) {
 	for( let x=0 ; x<world.sx ; ++x ) {
 		for( let y=0 ; y<world.sy ; ++y ) {
 			for( let z=0 ; z<world.sz ; ++z ) {
-				light[x][y][z] = 0;
+				let a = lightMap[x][y][z];
+				a[0] = 0.0;
+				a[1] = 0.0;
+				a[2] = 0.0;
 			}
 		}
 	}
@@ -234,8 +246,8 @@ function brainlessLight(world) {
 	for( let x=0 ; x<world.sx ; ++x ) {
 		for( let y=0 ; y<world.sy ; ++y ) {
 			for( let z=0 ; z<world.sz ; ++z ) {
-				if( blocks[x][y][z].isLight ) {
-					cast( x, y, z, blocks[x][y][z].intensity || 7 );
+				if( blocks[x][y][z].light ) {
+					cast( x, y, z, blocks[x][y][z].light );
 				}
 			}
 		}

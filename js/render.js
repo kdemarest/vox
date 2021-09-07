@@ -8,7 +8,7 @@ Module.add('renderer',function(){
 	// ==========================================
 
 	// Shaders
-	var vertexSource =
+	var blockVertexSource =
 		"uniform mat4 uProjMatrix;"+
 		"uniform mat4 uViewMatrix;"+
 		"uniform mat4 uModelMatrix;"+
@@ -22,7 +22,7 @@ Module.add('renderer',function(){
 		"	vColor = aColor;"+
 		"	vTexCoord = aTexCoord;"+
 		"}";
-	var fragmentSource =
+	var blockFragmentSource =
 		"precision highp float;"+
 		"uniform sampler2D uSampler;"+
 		"varying vec4 vColor;"+
@@ -48,10 +48,12 @@ Module.add('renderer',function(){
 		v.push( p1[0], p1[1], p1[2], p1[3], p1[4], p1[5], p1[6], p1[7], p1[8] );
 	}
 
-	class Renderer {
+	function glInit() {
+	}
+
+	class OpenGl {
 		constructor( id ) {
 			var canvas = this.canvas = document.getElementById( id );
-			canvas.renderer = this;
 			canvas.width = canvas.clientWidth;
 			canvas.height = canvas.clientHeight;
 			
@@ -67,7 +69,7 @@ Module.add('renderer',function(){
 			} catch ( e ) {
 				throw "Your browser doesn't support WebGL!";
 			}
-			
+
 			gl.viewportWidth = canvas.width;
 			gl.viewportHeight = canvas.height;
 			
@@ -75,20 +77,135 @@ Module.add('renderer',function(){
 			gl.enable( gl.DEPTH_TEST );
 			gl.enable( gl.CULL_FACE );	// and the culling mode defaults to gl.BACK
 			gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
+			gl.disable( gl.BLEND );
+		}
+	}
 
+	function createTextureFromImage(image) {
+		let gl = window.openGl.gl;
+		let texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+
+		// Set the parameters so we can render any size image.
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+		// Upload the image into the texture.
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+		return texture;
+	}
+
+	function createTextureBlank(xLen,yLen) {
+		let gl = window.openGl.gl;
+		let texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+
+		// Set the parameters so we can render any size image.
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+		// Upload the image into the texture.
+		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, xLen, yLen, 0, gl.RGBA, gl.UNSIGNED_BYTE, null );
+
+		return texture;
+	}
+
+	class Atlas extends TextureWriter {
+		constructor(width,height) {
+			super();
+			this.xOffset = 0;
+			this.yOffset = 0;
+			this.yMaxHeight = 0;
+
+			let gl = window.openGl.gl;
+			this.init(gl);
+			this.create(gl,width,height);
+		}
+		add( txSource, txWidth, txHeight ) {
+			let gl = window.openGl.gl;
+
+			if( this.xOffset + txWidth >= this.width ) {
+				this.xOffset = 0;
+				this.yOffset += this.yMaxHeight;
+				this.yMaxHeight = 0;
+			}
+
+			this.draw(gl,txSource,this.xOffset,this.yOffset,txWidth,txHeight);
+			let rect = this.coord( this.xOffset, this.yOffset, txWidth, txHeight );
+			this.xOffset += txWidth;
+			this.yMaxHeight = Math.max( this.yMaxHeight, txHeight );
+			return rect;
+		}
+		coord( xPixel, yPixel, width, height ) {
+			return [ xPixel/this.width, yPixel/this.height, (xPixel+width)/this.width, (yPixel+height)/this.height ];
+		}
+	}
+
+
+	class ShaderSet {
+		constructor() {
+			this.gl = window.openGl.gl;
+			this.program = this.gl.createProgram();
+		}
+		fetch(source, type) {
+			let gl = this.gl;
+			let shader = gl.createShader( type );
+			gl.shaderSource( shader, source );
+			gl.compileShader( shader );
+			gl.attachShader( this.program, shader );
+			
+			if ( !gl.getShaderParameter( shader, gl.COMPILE_STATUS ) ) {
+				throw "Could not compile vertex shader!\n" + gl.getShaderInfoLog( shader );
+			}
+			return this;
+		}
+		link()
+		{
+			var gl = this.gl;
+			gl.linkProgram( this.program );
+			if ( !gl.getProgramParameter( this.program, gl.LINK_STATUS ) ) {
+				throw "Could not link the shader program!";
+			}
+			gl.useProgram( this.program );
+			return this;
+		}
+	}
+
+	class Renderer {
+		constructor(openGl) {
+			let gl = this.gl = openGl.gl;
+			let canvas = this.canvas = openGl.canvas; 
+			canvas.renderer = this;
 
 			// Load shaders
-			this.loadShaders();
-			
-			
+			this.blockShaders =
+				new ShaderSet()
+				.fetch( blockVertexSource, gl.VERTEX_SHADER )
+				.fetch( blockFragmentSource, gl.FRAGMENT_SHADER )
+				.link()
+			;
+			// Store variable locations
+			let program = this.blockShaders.program;
+			this.uProjMat	= gl.getUniformLocation( program, "uProjMatrix" );
+			this.uViewMat	= gl.getUniformLocation( program, "uViewMatrix" );
+			this.uModelMat	= gl.getUniformLocation( program, "uModelMatrix" );
+			this.uSampler	= gl.getUniformLocation( program, "uSampler" );
+			this.aPos		= gl.getAttribLocation( program, "aPos" );
+			this.aColor		= gl.getAttribLocation( program, "aColor" );
+			this.aTexCoord	= gl.getAttribLocation( program, "aTexCoord" );
+
 			// Create projection and view matrices
-			var projMatrix = this.projMatrix = mat4.create();
-			var viewMatrix = this.viewMatrix = mat4.create();
+			this.projMatrix = mat4.create();
+			this.viewMatrix = mat4.create();
 			
 			// Create dummy model matrix
-			var modelMatrix = this.modelMatrix = mat4.create();
-			mat4.identity( modelMatrix );
-			gl.uniformMatrix4fv( this.uModelMat, false, modelMatrix );
+			this.modelMatrix = mat4.create();
+			mat4.identity( this.modelMatrix );
 			
 			// Create 1px white texture for pure vertex color operations (e.g. picking)
 			var whiteTexture = this.texWhite = gl.createTexture();
@@ -99,43 +216,12 @@ Module.add('renderer',function(){
 			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
 			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 			gl.uniform1i(  this.uSampler, 0 );
-			
-			
+
 			// Load terrain texture
-			var terrainTexture = this.texTerrain = gl.createTexture();
-			terrainTexture.image = new Image();
-			terrainTexture.image.onload = function()
-			{
+			this.atlas = new Atlas(1024,1024);
 
-				function isPowerOf2(value) {
-					return (value & (value - 1)) == 0;
-				}
+			BLOCK.atlasPixelRectDefault = [0,0,1,1];
 
-				gl.bindTexture( gl.TEXTURE_2D, terrainTexture );
-
-				// void gl.texImage2D(target, level, internalformat, format, type, HTMLImageElement? pixels);
-				gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, terrainTexture.image );
-
-				// max filter is used when many texels map to a single pixel
-				// we choose "nearest" so that the texture doesn't become blurry due to sampling.
-				gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
-				// min filter is used when texel maps to more than one pixel. 
-				// we choose "nearest" so that the texture doesn't become blurry due to sampling.
-				gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
-
-				// KD: Instead of just picking the nearest texel, as the original code did,
-				// we now cause mipmaps to be generated.
-				if (isPowerOf2(terrainTexture.image.width) && isPowerOf2(terrainTexture.image.height)) {
-					// Yes, it's a power of 2. Generate mips.
-					gl.generateMipmap(gl.TEXTURE_2D);
-				} else {
-					// No, it's not a power of 2. Turn of mips and set wrapping to clamp to edge
-					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-				}
-			};
-			terrainTexture.image.src = "media/terrain.png";
-			
 			// Create canvas used to draw name tags
 			var textCanvas = this.textCanvas = document.createElement( "canvas" );
 			textCanvas.width = 256;
@@ -148,6 +234,30 @@ Module.add('renderer',function(){
 			document.getElementsByTagName( "body" )[0].appendChild( textCanvas );
 		}
 
+		onImageComplete( status, imgStem, resource ) {
+			if( imgStem === false ) {
+				// it is the placeholder...
+				let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
+				BLOCK.atlasPixelRectDefault = rect;
+				return;
+			}
+			let assigned = false;
+			BLOCK.traverse( block => {
+//				if( block.id !== 2 && block.id !== 1 ) { assigned=true; return; }
+				if( block.textureStem == imgStem ) {
+					let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
+					console.log( imgStem,'at',rect);
+					block.atlasPixelRect = [rect];	// zero'th index means 'all directions use this rect'
+					//block.atlasPixelRect = [[0,0,1,1]];	// zero'th index means 'all directions use this rect'
+					assigned = true;
+					return;
+				}
+			});
+			for ( var i = 0; i < this.chunks.length; i++ )
+				this.chunks[i].dirty = true;
+
+			console.assert( assigned );
+		}
 		// draw()
 		//
 		// Render one frame of the world to the canvas.
@@ -155,16 +265,26 @@ Module.add('renderer',function(){
 		draw()
 		{
 			var gl = this.gl;
+
+			gl.useProgram( this.blockShaders.program );
+			gl.enableVertexAttribArray( this.aPos );
+			gl.enableVertexAttribArray( this.aColor );
+			gl.enableVertexAttribArray( this.aTexCoord );
 			
 			// Initialise view
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 			this.updateViewport();
 			gl.viewport( 0, 0, gl.viewportWidth, gl.viewportHeight );
 			gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-			
+
+			gl.uniformMatrix4fv( this.uViewMat, false, this.viewMatrix );
+			gl.uniformMatrix4fv( this.uProjMat, false, this.projMatrix );
+			gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+		
 			// Draw level chunks
 			var chunks = this.chunks;
 			
-			gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
+			gl.bindTexture( gl.TEXTURE_2D, this.atlas.texture ); //this.texTerrain );
 			
 			if ( chunks != null )
 			{
@@ -177,58 +297,12 @@ Module.add('renderer',function(){
 			
 			mat4.identity( this.modelMatrix );
 			gl.uniformMatrix4fv( this.uModelMat, false, this.modelMatrix );
+
+			gl.disableVertexAttribArray( this.aPos );
+			gl.disableVertexAttribArray( this.aColor );
+			gl.disableVertexAttribArray( this.aTexCoord );
 		}
 
-		// buildPlayerName( nickname )
-		//
-		// Returns the texture and vertex buffer for drawing the name
-		// tag of the specified player.
-
-		buildPlayerName( nickname )
-		{
-			var gl = this.gl;
-			var canvas = this.textCanvas;
-			var ctx = this.textContext;
-			
-			nickname = nickname.replace( /&lt;/g, "<" ).replace( /&gt;/g, ">" ).replace( /&quot;/, "\"" );
-			
-			var w = ctx.measureText( nickname ).width + 16;
-			var h = 45;
-			
-			// Draw text box
-			ctx.fillStyle = "#000";
-			ctx.fillRect( 0, 0, w, 45 );
-			
-			ctx.fillStyle = "#fff";
-			ctx.fillText( nickname, 10, 20 );
-			
-			// Create texture
-			var tex = gl.createTexture();
-			gl.bindTexture( gl.TEXTURE_2D, tex );
-			gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas );
-			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR );
-			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR );
-			
-			// Create model
-			var vertices = [
-				-w/2, 0, h, w/256, 0, 1, 1, 1, 0.7,
-				w/2, 0, h, 0, 0, 1, 1, 1, 0.7,
-				w/2, 0, 0, 0, h/64, 1, 1, 1, 0.7,
-				w/2, 0, 0, 0, h/64, 1, 1, 1, 0.7,
-				-w/2, 0, 0, w/256, h/64, 1, 1, 1, 0.7,
-				-w/2, 0, h, w/256, 0, 1, 1, 1, 0.7
-			];
-			
-			var buffer = gl.createBuffer();
-			buffer.vertices = vertices.length / 9;
-			gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-			gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STATIC_DRAW );
-			
-			return {
-				texture: tex,
-				model: buffer
-			};
-		}
 
 		// pickAt( min, max, mx, myy )
 		//
@@ -247,6 +321,11 @@ Module.add('renderer',function(){
 		{
 			var gl = this.gl;
 			var world = this.world;
+
+			gl.useProgram( this.blockShaders.program );
+			gl.enableVertexAttribArray( this.aPos );
+			gl.enableVertexAttribArray( this.aColor );
+			gl.enableVertexAttribArray( this.aTexCoord );
 			
 			// Create framebuffer for picking render
 			var fbo = gl.createFramebuffer();
@@ -295,16 +374,15 @@ Module.add('renderer',function(){
 			var pixel = new Uint8Array( 4 );
 			gl.readPixels( mx/gl.viewportWidth*512, (1-my/gl.viewportHeight)*512, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel );
 			
-			// Reset states
-			gl.bindTexture( gl.TEXTURE_2D, this.texTerrain );
-			gl.bindFramebuffer( gl.FRAMEBUFFER, null );
-			gl.clearColor( 0.62, 0.81, 1.0, 1.0 );
-			
 			// Clean up
 			gl.deleteBuffer( buffer );
 			gl.deleteRenderbuffer( renderbuffer );
 			gl.deleteTexture( bt );
 			gl.deleteFramebuffer( fbo );
+
+			gl.disableVertexAttribArray( this.aPos );
+			gl.disableVertexAttribArray( this.aColor );
+			gl.disableVertexAttribArray( this.aTexCoord );
 			
 			// Build result
 			if ( pixel[0] != 255 )
@@ -349,58 +427,6 @@ Module.add('renderer',function(){
 				// Update perspective projection based on new w/h ratio
 				this.setPerspective( this.fov, this.min, this.max );
 			}
-		}
-
-		// loadShaders()
-		//
-		// Takes care of loading the shaders.
-
-		loadShaders()
-		{
-			var gl = this.gl;
-			
-			// Create shader program
-			var program = this.program = gl.createProgram();
-			
-			// Compile vertex shader
-			var vertexShader = gl.createShader( gl.VERTEX_SHADER );
-			gl.shaderSource( vertexShader, vertexSource );
-			gl.compileShader( vertexShader );
-			gl.attachShader( program, vertexShader );
-			
-			if ( !gl.getShaderParameter( vertexShader, gl.COMPILE_STATUS ) )
-				throw "Could not compile vertex shader!\n" + gl.getShaderInfoLog( vertexShader );
-			
-			// Compile fragment shader
-			var fragmentShader = gl.createShader( gl.FRAGMENT_SHADER );
-			gl.shaderSource( fragmentShader, fragmentSource );
-			gl.compileShader( fragmentShader );
-			gl.attachShader( program, fragmentShader );
-			
-			if ( !gl.getShaderParameter( fragmentShader, gl.COMPILE_STATUS ) )
-				throw "Could not compile fragment shader!\n" + gl.getShaderInfoLog( fragmentShader );
-			
-			// Finish program
-			gl.linkProgram( program );
-			
-			if ( !gl.getProgramParameter( program, gl.LINK_STATUS ) )
-				throw "Could not link the shader program!";
-			
-			gl.useProgram( program );
-			
-			// Store variable locations
-			this.uProjMat = gl.getUniformLocation( program, "uProjMatrix" );
-			this.uViewMat= gl.getUniformLocation( program, "uViewMatrix" );
-			this.uModelMat= gl.getUniformLocation( program, "uModelMatrix" );
-			this.uSampler = gl.getUniformLocation( program, "uSampler" );
-			this.aPos = gl.getAttribLocation( program, "aPos" );
-			this.aColor = gl.getAttribLocation( program, "aColor" );
-			this.aTexCoord = gl.getAttribLocation( program, "aTexCoord" );
-			
-			// Enable input
-			gl.enableVertexAttribArray( this.aPos );
-			gl.enableVertexAttribArray( this.aColor );
-			gl.enableVertexAttribArray( this.aTexCoord );
 		}
 
 		// setWorld( world, chunkSize )
@@ -518,7 +544,6 @@ Module.add('renderer',function(){
 			this.max = max;
 			
 			mat4.perspective( fov, gl.viewportWidth / gl.viewportHeight, min, max, this.projMatrix );
-			gl.uniformMatrix4fv( this.uProjMat, false, this.projMatrix );
 		}
 
 		// setCamera( pos, ang )
@@ -541,8 +566,6 @@ Module.add('renderer',function(){
 			mat4.rotate( this.viewMatrix, -ang[2], [ 0, 1, 0 ], this.viewMatrix );
 			
 			mat4.translate( this.viewMatrix, [ -pos[0], -pos[1], -pos[2] ], this.viewMatrix );
-			
-			gl.uniformMatrix4fv( this.uViewMat, false, this.viewMatrix );
 		}
 
 		drawBuffer( buffer )
@@ -560,16 +583,10 @@ Module.add('renderer',function(){
 			
 			gl.drawArrays( gl.TRIANGLES, 0, buffer.vertices );
 		}
-
-		/*
-
-			gl.vertexAttribPointer( this.aPos, 3, gl.FLOAT, false, 9*4, 0 );
-			gl.vertexAttribPointer( this.aColor, 4, gl.FLOAT, false, 9*4, 5*4 );
-			gl.vertexAttribPointer( this.aTexCoord, 2, gl.FLOAT, false, 9*4, 3*4 );
-		*/
 	}
 
 	return {
+		OpenGl: OpenGl,
 		Renderer: Renderer,
 		pushQuad: pushQuad
 	}

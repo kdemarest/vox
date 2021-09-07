@@ -20,12 +20,15 @@ class Controls {
 			document.mozPointerLockElement === this.pointerLockElement ||
 			document.webkitPointerLockElement === this.pointerLockElement;
 	}
-	pointerLockRequest(element=this.canvas) {
+	pointerLock(element=this.canvas) {
 		this.pointerLockElement = element;
 		element.requestPointerLock = element.requestPointerLock ||
 			element.mozRequestPointerLock ||
 			element.webkitRequestPointerLock;
 		element.requestPointerLock();
+	}
+	pointerUnlock(element=this.canvas) {
+		document.exitPointerLock();
 	}
 	pointerTrack(event) {
 		let dx = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
@@ -42,11 +45,13 @@ class Controls {
 		let onKeyDown = (event)=>{
 			if( this.keyDef[event.key] ) {
 				this.keyDef[event.key](this.target,1);
+				event.preventDefault();
 			}
 		}
 		let onKeyUp = (event)=>{
 			if( this.keyDef[event.key] ) {
 				this.keyDef[event.key](this.target,0);
+				event.preventDefault();
 			}
 		}
 		window.addEventListener('keydown',onKeyDown);
@@ -61,8 +66,8 @@ class Controls {
 			}
 		});
 		element.addEventListener('click',(event)=>{
-			if( !this.isPointerLocked ) {
-				this.pointerLockRequest();
+			if( !document.hasFocus() && !this.isPointerLocked ) {
+				this.pointerLock();
 			}
 			else 
 			{

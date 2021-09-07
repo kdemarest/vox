@@ -28,7 +28,7 @@ BLOCK.BEDROCK = {
 	id: 1,
 	spawnable: false,
 	transparent: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 1/16, 2/16, 2/16 ]; }
+	textureStem: 'block/bedrock.png',
 };
 
 // Dirt
@@ -39,15 +39,7 @@ BLOCK.DIRT = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir )
-	{
-		if ( dir == DIRECTION.UP && lit )
-			return [ 14/16, 0/16, 15/16, 1/16 ];
-		else if ( dir == DIRECTION.DOWN || !lit ) 
-			return [ 2/16, 0/16, 3/16, 1/16 ];
-		else
-			return [ 3/16, 0/16, 4/16, 1/16 ];
-	}
+	textureStem: 'block/dirt.png',
 };
 
 // Wood
@@ -58,13 +50,7 @@ BLOCK.WOOD = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir )
-	{
-		if ( dir == DIRECTION.UP || dir == DIRECTION.DOWN )
-			return [ 5/16, 1/16, 6/16, 2/16 ];
-		else
-			return [ 4/16, 1/16, 5/16, 2/16 ];
-	}
+	textureStem: 'block/oak_planks.png',
 };
 
 // TORCH
@@ -73,10 +59,10 @@ BLOCK.TORCH = {
 	spawnable: true,
 	transparent: false,
 	selflit: true,
-	isLight: true,
+	light: { mag: 8, r:1.0, g:1.0, b:1.0 },
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 8/16, 1/16, 9/16, 2/16 ]; }
+	textureStem: 'block/torch.png',
 };
 
 // Bookcase
@@ -85,17 +71,10 @@ BLOCK.BOOKCASE = {
 	spawnable: true,
 	transparent: false,
 	selflit: false,
-	isLight: true,
-	intensity: 2,
+	light: { mag: 2, r:1.0, g: 1.0, b: 1.0 },
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir )
-	{
-		if ( dir == DIRECTION.FORWARD || dir == DIRECTION.BACK )
-			return [ 3/16, 2/16, 4/16, 3/16 ];
-		else
-			return [ 4/16, 0/16, 5/16, 1/16 ];
-	}
+	textureStem: 'block/bookshelf.png',
 };
 
 // Lava
@@ -104,11 +83,10 @@ BLOCK.LAVA = {
 	spawnable: false,
 	transparent: true,
 	selflit: true,
-	isLight: true,
-	intensity: 5,
+	light: { mag: 5, r: 1.0, g: 0.5, b: 0.5 },
 	gravity: true,
 	fluid: true,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 13/16, 14/16, 14/16, 15/16 ]; }
+	textureStem: 'block/lava.png',
 };
 
 // Plank
@@ -119,7 +97,7 @@ BLOCK.PLANK = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 4/16, 0/16, 5/16, 1/16 ]; }
+	textureStem: 'block/oak_planks.png',
 };
 
 // Cobblestone
@@ -130,7 +108,7 @@ BLOCK.COBBLESTONE = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 0/16, 1/16, 1/16, 2/16 ]; }
+	textureStem: 'block/cobblestone.png',
 };
 
 // Concrete
@@ -141,7 +119,6 @@ BLOCK.CONCRETE = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 0/16, 2/16, 1/16 ]; }
 };
 
 // Brick
@@ -152,7 +129,8 @@ BLOCK.BRICK = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 7/16, 0/16, 8/16, 1/16 ]; }
+	textureStem: 'block/bricks.png',
+
 };
 
 // Sand
@@ -163,7 +141,7 @@ BLOCK.SAND = {
 	selflit: false,
 	gravity: true,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 2/16, 1/16, 3/16, 2/16 ]; }
+	textureStem: 'block/sand.png',
 };
 
 // Gravel
@@ -174,7 +152,7 @@ BLOCK.GRAVEL = {
 	selflit: false,
 	gravity: true,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 3/16, 1/16, 4/16, 2/16 ]; }
+	textureStem: 'block/gravel.png',
 };
 
 // Iron
@@ -185,7 +163,7 @@ BLOCK.IRON = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 6/16, 1/16, 7/16, 2/16 ]; }
+	textureStem: 'block/iron_ore.png',
 };
 
 // Gold
@@ -196,7 +174,7 @@ BLOCK.GOLD = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 7/16, 1/16, 8/16, 2/16 ]; }
+	textureStem: 'block/gold_ore.png',
 };
 
 // Diamond
@@ -207,7 +185,7 @@ BLOCK.DIAMOND = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 8/16, 1/16, 9/16, 2/16 ]; }
+	textureStem: 'block/diamond_block.png',
 };
 
 
@@ -219,7 +197,7 @@ BLOCK.OBSIDIAN = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 5/16, 2/16, 6/16, 3/16 ]; }
+	textureStem: 'block/obsidian.png',
 };
 
 // Glass
@@ -230,7 +208,7 @@ BLOCK.GLASS = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 3/16, 2/16, 4/16 ]; }
+	textureStem: 'block/glass.png',
 };
 
 // Sponge
@@ -241,7 +219,7 @@ BLOCK.SPONGE = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 0/16, 3/16, 1/16, 4/16 ]; }
+	textureStem: 'block/sponge.png',
 };
 
 // Water
@@ -252,7 +230,7 @@ BLOCK.WATER = {
 	selflit: false,
 	gravity: false,
 	fluid: true,
-	texture: function( world, lightmap, lit, x, y, z, dir ) { return [ 1/16, 3/16, 2/16, 4/16 ]; }
+	textureStem: 'block/water.png',
 };
 
 // TNT
@@ -263,14 +241,20 @@ BLOCK.TNT = {
 	selflit: false,
 	gravity: false,
 	fluid: false,
-	texture: function( world, lightmap, lit, x, y, z, dir )
-	{
-		if ( dir == DIRECTION.UP || dir == DIRECTION.DOWN )
-			return [ 10/16, 0/16, 11/16, 1/16 ];
-		else
-			return [ 8/16, 0/16, 9/16, 1/16 ];
-	}
+	textureStem: 'block/tnt_side.png',
 };
+
+BLOCK.atlasPixelRectDefault = null;
+
+
+BLOCK.traverse = function( fn )
+{
+	for ( var mat in BLOCK )
+		if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat]!==null && typeof(BLOCK[mat].id) !==undefined )
+			fn(BLOCK[mat]);
+}
+
+BLOCK.traverse( block=>{ block.atlasPixelRect = []; } );
 
 
 // fromId( id )
@@ -290,128 +274,157 @@ BLOCK.fromId = function( id )
 // Pushes the vertices necessary for rendering a
 // specific block into the array.
 
-let lightMag = function(min,max) {
-	let a = [];
-	for( let i=0 ; i<=15 ; ++i ) { 
-		a[i] = min+((i/15)*(max-min));
-	}
-	return a;
-}(0.1,1.0);
+let LIGHT = new class {
+	constructor() {
+		this.max = 10;
 
+		this.mag = function(min,max,lightMax) {
+			let a = [];
+			for( let i=0 ; i<=lightMax ; ++i ) { 
+				let x = lightMax - i;
+				let n1 = Math.exp(-x/(lightMax/3));	// technically should divide by 5
+				let n2 = i/lightMax;
+				let n = (n1+n2)/2.0;
+				a[i] = min+(n*(max-min));
+			}
+
+			return a;
+		}(0.03,1.0,this.max);
+	}
+}
+
+BLOCK.getTx = function(block,world,x,y,z,dir) {
+	if( block.textureStem ) {
+		window.textureRepo.getResourceByImg(block.textureStem);
+	}
+
+	let c = block.atlasPixelRect[dir] || block.atlasPixelRect[0] || BLOCK.atlasPixelRectDefault;
+	return c;
+}
 
 BLOCK.pushVertices = function( vertices, world, x, y, z )
 {
-
 	var blocks = world.blocks;
-	var light  = world.light;
+	var lightMap  = world.lightMap;
 	var block  = blocks[x][y][z];
 	var bH = block.fluid && ( z == world.sz - 1 || !blocks[x][y][z+1].fluid ) ? 0.8 : 1.0;
-	
+	let lightMax = LIGHT.max;
+	let lightFull = [lightMax,lightMax,lightMax];
+
 	// Top
 	if ( z == world.sz - 1 || world.blocks[x][y][z+1].transparent || block.fluid )
 	{
-		var c = block.texture( world, null, null, x, y, z, DIRECTION.UP );
+		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.UP );
 
-		let lightNum = z>=world.sz-1 ? 0 : light[x][y][z+1];
-		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
-		//console.log( 'top['+x+']['+y+']='+lightMultiplier );
+		let m = block.selflit || z>=world.sz-1 ? lightFull : lightMap[x][y][z+1];
+		let r = LIGHT.mag[ m[0] ];
+		let g = LIGHT.mag[ m[1] ];
+		let b = LIGHT.mag[ m[2] ];
 
-//		if( Math.floor(BLOCK._player.body.pos.x)==Math.floor(x) && Math.floor(BLOCK._player.body.pos.y)==Math.floor(y) && z!=15) {
-//			console.log( 'at['+x+']['+y+']['+z+']='+lightNum+' : '+lightMultiplier );
-//		}
-
+		//let lightNum = z>=world.sz-1 ? 0 : lightMap[x][y][z+1];
+		//var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 
 		pushQuad(
 			vertices,
-			[ x, y, z + bH, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y + 1.0, z + bH, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y + 1.0, z + bH, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x, y, z + bH,				c[0], c[1], r, g, b, 1.0 ],
+			[ x + 1.0, y, z + bH,		c[2], c[1], r, g, b, 1.0 ],
+			[ x + 1.0, y + 1.0, z + bH, c[2], c[3], r, g, b, 1.0 ],
+			[ x, y + 1.0, z + bH,		c[0], c[3], r, g, b, 1.0 ]
 		);
 	}
 	
 	// Bottom
 	if ( z == 0 || world.blocks[x][y][z-1].transparent )
 	{
-		var c = block.texture( world, null, null, x, y, z, DIRECTION.DOWN );
+		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.DOWN );
 		
-		let lightNum = z<=0 ? 0 : light[x][y][z-1];
-		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
+		let m = block.selflit || z<=0 ? lightFull : lightMap[x][y][z-1];
+		let r = LIGHT.mag[ m[0] ];
+		let g = LIGHT.mag[ m[1] ];
+		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
 			vertices,							
-			[ x, y + 1.0, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y + 1.0, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y, z, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y, z, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
+			[ x + 1.0, y + 1.0, z,	c[2], c[3], r, g, b, 1.0 ],
+			[ x + 1.0, y, z,		c[2], c[1], r, g, b, 1.0 ],
+			[ x, y, z,				c[0], c[1], r, g, b, 1.0 ]
 		);
 	}
 	
 	// Front
 	if ( y == 0 || world.blocks[x][y-1][z].transparent )
 	{
-		var c = block.texture( world, null, null, x, y, z, DIRECTION.FORWARD );
+		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.FORWARD );
 		
-		let lightNum = y<=0 ? 0 : light[x][y-1][z];
-		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
+		let m = block.selflit || y<=0 ? lightFull : lightMap[x][y-1][z];
+		let r = LIGHT.mag[ m[0] ];
+		let g = LIGHT.mag[ m[1] ];
+		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
 			vertices,
-			[ x, y, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y, z + bH, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x, y, z,				c[0], c[3], r, g, b, 1.0 ],
+			[ x + 1.0, y, z,		c[2], c[3], r, g, b, 1.0 ],
+			[ x + 1.0, y, z + bH,	c[2], c[1], r, g, b, 1.0 ],
+			[ x, y, z + bH,			c[0], c[1], r, g, b, 1.0 ]
 		);
 	}
 	
 	// Back
 	if ( y == world.sy - 1 || world.blocks[x][y+1][z].transparent )
 	{
-		var c = block.texture( world, null, null, x, y, z, DIRECTION.BACK );
+		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.BACK );
 		
-		let lightNum = y>=world.sy-1 ? 0 : light[x][y+1][z];
-		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
+		let m = block.selflit || y>=world.sy-1 ? lightFull : lightMap[x][y+1][z];
+		let r = LIGHT.mag[ m[0] ];
+		let g = LIGHT.mag[ m[1] ];
+		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
 			vertices,
-			[ x, y + 1.0, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y + 1.0, z + bH, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y + 1.0, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y + 1.0, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x, y + 1.0, z + bH,		c[2], c[1], r, g, b, 1.0 ],
+			[ x + 1.0, y + 1.0, z + bH,	c[0], c[1], r, g, b, 1.0 ],
+			[ x + 1.0, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
+			[ x, y + 1.0, z,			c[2], c[3], r, g, b, 1.0 ]
 		);
 	}
 	
 	// Left
 	if ( x == 0 || world.blocks[x-1][y][z].transparent )
 	{
-		var c = block.texture( world, null, null, x, y, z, DIRECTION.LEFT );
+		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.LEFT );
 		
-		let lightNum = x<=0 ? 0 : light[x-1][y][z];
-		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
+		let m = block.selflit || x<=0 ? lightFull : lightMap[x-1][y][z];
+		let r = LIGHT.mag[ m[0] ];
+		let g = LIGHT.mag[ m[1] ];
+		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
 			vertices,
-			[ x, y, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y + 1.0, z + bH, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y + 1.0, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x, y, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x, y, z + bH,			c[2], c[1], r, g, b, 1.0 ],
+			[ x, y + 1.0, z + bH,	c[0], c[1], r, g, b, 1.0 ],
+			[ x, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
+			[ x, y, z,				c[2], c[3], r, g, b, 1.0 ]
 		);
 	}
 	
 	// Right
 	if ( x == world.sx - 1 || world.blocks[x+1][y][z].transparent )
 	{
-		var c = block.texture( world, null, null, x, y, z, DIRECTION.RIGHT );
+		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.RIGHT );
 		
-		let lightNum = x>=world.sx-1 ? 0 : light[x+1][y][z];
-		var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
+		let m = block.selflit || x>=world.sx-1 ? lightFull : lightMap[x+1][y][z];
+		let r = LIGHT.mag[ m[0] ];
+		let g = LIGHT.mag[ m[1] ];
+		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
 			vertices,
-			[ x + 1.0, y, z, c[0], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y + 1.0, z, c[2], c[3], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y + 1.0, z + bH, c[2], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ],
-			[ x + 1.0, y, z + bH, c[0], c[1], lightMultiplier, lightMultiplier, lightMultiplier, 1.0 ]
+			[ x + 1.0, y, z,			c[0], c[3], r, g, b, 1.0 ],
+			[ x + 1.0, y + 1.0, z,		c[2], c[3], r, g, b, 1.0 ],
+			[ x + 1.0, y + 1.0, z + bH,	c[2], c[1], r, g, b, 1.0 ],
+			[ x + 1.0, y, z + bH,		c[0], c[1], r, g, b, 1.0 ]
 		);
 	}
 }

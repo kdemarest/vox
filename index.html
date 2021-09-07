@@ -11,8 +11,15 @@
 
 <!-- Modules -->
 <script src="js/glMatrix-1.2.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
+
+<script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
 <script src="js/utilModule.js" type="text/javascript"></script>
 <script src="js/utilities.js" type="text/javascript"></script>
+<script src="js/utilPlugin.js" type="text/javascript"></script>
+<script src="js/textureWriter.js" type="text/javascript"></script>
+<script src="js/textureRepo.js" type="text/javascript"></script>
+<script src="js/config.js" type="text/javascript"></script>
 <script src="js/data.js" type="text/javascript"></script>
 <script src="js/map.js" type="text/javascript"></script>
 <script src="js/mapMaker.js" type="text/javascript"></script>
@@ -25,13 +32,16 @@
 <script src="js/body.js" type="text/javascript"></script>
 <script src="js/viewMaterial.js" type="text/javascript"></script>
 <script src="js/player.js" type="text/javascript"></script>
+<script src="js/game.js" type="text/javascript"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
 
 <script type="text/javascript">
 Module.add( 'main', ()=> {
 
 	let globalMapString = ``+
 	`############################################\n`+
-	`#.....######################################\n`+
+	`#.....######################*###############\n`+
 	`#####+##..B.........ttttttttttttttttt#######\n`+
 	`##.................########::::#####tt######\n`+
 	`##.......::.N.......www..####:::######t#####\n`+
@@ -41,17 +51,17 @@ Module.add( 'main', ()=> {
 	`##..444......###.:::::w.:::::::::::#.#t#####\n`+
 	`##..444......==..:::::w#::::::::::::...#####\n`+
 	`##...4...#.#####.-:::-w::::::::::::.....####\n`+
-	`##www4www#.#¥.¥#......w.:::::::::::.......##\n`+
+	`##www4www#.#¥.¥#......w.:::::::::::..*....##\n`+
 	`##www4ww##.#¥¥¥#........#::::::::::.......##\n`+
 	`##www4ww##.#¥¥¥#........#::::::::::.......##\n`+
-	`##wwwwww##.&#..#..N.......::::::::...MM...##\n`+
+	`##wwwwww#*.&#..#..N.......::::::::...MM...##\n`+
 	`###wwww####.&#.#.NCN.......::::::.##.MM...##\n`+
 	`###ww#######...#..N...............##......##\n`+
 	`##########.###&#####+######+####..........##\n`+
-	`###.......##...................##.-:::-...##\n`+
-	`###...###......................###:::::...##\n`+
+	`###.......##...................##.-:::-...*#\n`+
+	`###...##*......................###:::::...##\n`+
 	`###...######...NNN......#+#....###:::::...##\n`+
-	`#######&........U.......+I+....###:::::...##\n`+
+	`#######&........U.......+*+....###:::::...##\n`+
 	`######&.####..C.°.C.....#+#.......-:::-...##\n`+
 	`######.##¥¥#............................####\n`+
 	`######.#.¥.#............................####\n`+
@@ -154,7 +164,16 @@ Module.add( 'playerControls', ()=> {
 			super(canvas,player);
 
 			this.addListener();
-			this.pointerLockRequest();
+			this.pointerLock();
+			this.keyDef['Tab'] = (target,value) => {
+				if( !value ) return;
+				if( this.isPointerLocked ) {
+					this.pointerUnlock();
+				}
+				else {
+					this.pointerLock();
+				}
+			}
 			this.keyDef['w'] = this.keyDef['W'] =	(target,value) => { target.forward = value; }
 			this.keyDef['s'] = this.keyDef['S'] =	(target,value) => { target.forward = -value; }
 			this.keyDef['a'] = this.keyDef['A'] =	(target,value) => { target.sideways = value; }
@@ -208,10 +227,22 @@ Module.add( 'playerControls', ()=> {
 
 });
 
-function main(){
-	Module.realize();
 
-	Random.Pseudo.seed(12345);
+async function main(){
+
+	function onImageComplete( status, imgStem, resource ) {
+		render.onImageComplete( status, imgStem, resource );
+	}
+
+	window.IMG_BASE = "media/";
+	let pseudoRandomSeed = 12345;
+	let flogueConfigEnvVariableId = 'flogueConfigId';
+
+	window.openGl = new OpenGl( "renderSurface" );
+
+	let game = new Game( pseudoRandomSeed, flogueConfigEnvVariableId );
+	await game.initPlugins( [] );
+	await game.initImages( onImageComplete, 250 );
 
 	let mapMaker = new MapMaker(globalMapString);
 	let world = new World();
@@ -224,7 +255,7 @@ function main(){
 
 	
 	// Set up renderer
-	var render = new Renderer( "renderSurface" );
+	var render = new Renderer( window.openGl );
 	render.setWorld( world, 8 );
 	render.setPerspective( 60, 0.01, 200 );
 	
@@ -263,8 +294,12 @@ function main(){
 	window.requestAnimationFrame(window.tick);
 }
 
-window.addEventListener('DOMContentLoaded', main);
+Module.entryPoint( () => {
+	Profile.end('scripts').tell();
+	main();
+});
 
 </script>
+
 </body>
 </html>

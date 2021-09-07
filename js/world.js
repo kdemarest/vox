@@ -27,7 +27,7 @@ class World {
 		}
 
 		this.blocks = array3(sx,sy,sz,()=>BLOCK.AIR);
-		this.light  = array3(sx,sy,sz,()=>0);
+		this.lightMap  = array3(sx,sy,sz,()=>[0.0,0.0,0.0]);
 
 		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, 16 );
 
