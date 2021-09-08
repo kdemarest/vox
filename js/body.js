@@ -1,5 +1,10 @@
 Module.add('body',function(){
 
+	let FallRate = {
+		inAir: -0.5,
+		inFluid: -0.05
+	}
+
 	class Body {
 		constructor(owner) {
 			this.owner = owner;
@@ -15,6 +20,7 @@ Module.add('body',function(){
 			this.velocity = new Vector( 0, 0, 0 );
 			this.angles = [ 0, Math.PI, 0 ];
 			this.falling = false;
+			this.inFluid = false;
 			this.crawl = false;
 			this.crouch = false;
 			this.sprite = false;
@@ -79,24 +85,53 @@ Module.add('body',function(){
 				this.angles[0] = this.pitch;
 				this.angles[1] = this.yaw;
 
-				// Gravity
-				if ( this.falling )
-					velocity.z += -0.5;
 
-				// Jumping
-				if ( this.jump && !this.falling )
-				{
-					velocity.z = 8;
+				if( this.inFluid ) {
+					if( this.jump ) {
+						if( this.atSurface ) {
+							velocity.z = 4;
+						}
+						else {
+							velocity.z = 0.4;
+						}
+						this.jump = false;
+					}
+					else
+					if( this.falling ) {
+						if( this.atSurface ) {
+							velocity.z += FallRate.inAir;	
+							let maxFallAtSurface = -4.0;
+							velocity.z = Math.max( velocity.z, maxFallAtSurface );
+						}
+						else {
+							velocity.z += FallRate.inFluid;
+							let maxFallInFluid = -0.3;
+							velocity.z = Math.max( velocity.z, maxFallInFluid );
+						}
+					}
+				}
+				else {
+
+					// Gravity
+					if( this.falling ) {
+						velocity.z += FallRate.inAir;
+					}
+
+					// Jumping
+					if ( this.jump && !this.falling )
+					{
+						velocity.z = 8;
+					}
 					this.jump = false;
 				}
 
 				// Walking
-				if ( !this.falling )
+				if ( !this.falling || this.inFluid )
 				{
 					try {
 					var impulse = {x:0,y:0};
 
-					let maxSpeed = (this.crouch || this.crawl) ? 1.3 : this.sprint ? 6 : 4.3;
+					let maxSpeed = (this.inFluid || this.crouch || this.crawl) ? 1.3 : this.sprint ? 6 : 4.3;
 					let fScale = maxSpeed;
 					let sScale = maxSpeed;
 					impulse.x += Math.cos( Math.PI / 2 - this.angles[1] ) * this.forward * fScale;
@@ -137,6 +172,11 @@ Module.add('body',function(){
 
 		detectCollision( _pos, _velocity, forceStand )
 		{
+
+ 			function sideCollide(block) {
+ 				return !block.isAir && !block.fluid;
+ 			}
+
 			let result = {};
 
 			// Collect XY collision sides
@@ -155,12 +195,12 @@ Module.add('body',function(){
 				{
 					for ( var z = bPos.z; z <= bPos.z + zHeight; z++ )
 					{
-						if ( world.getBlock( x, y, z ) != BLOCK.AIR )
+						if ( sideCollide(world.getBlock( x, y, z )) )
 						{
-							if ( world.getBlock( x - 1, y, z ) == BLOCK.AIR ) xyCandidate.push( { x: x, dir: -1, y1: y, y2: y + 1 } );
-							if ( world.getBlock( x + 1, y, z ) == BLOCK.AIR ) xyCandidate.push( { x: x + 1, dir: 1, y1: y, y2: y + 1 } );
-							if ( world.getBlock( x, y - 1, z ) == BLOCK.AIR ) xyCandidate.push( { y: y, dir: -1, x1: x, x2: x + 1 } );
-							if ( world.getBlock( x, y + 1, z ) == BLOCK.AIR ) xyCandidate.push( { y: y + 1, dir: 1, x1: x, x2: x + 1 } );
+							if ( !sideCollide(world.getBlock( x - 1, y, z )) ) xyCandidate.push( { x: x, dir: -1, y1: y, y2: y + 1 } );
+							if ( !sideCollide(world.getBlock( x + 1, y, z )) ) xyCandidate.push( { x: x + 1, dir: 1, y1: y, y2: y + 1 } );
+							if ( !sideCollide(world.getBlock( x, y - 1, z )) ) xyCandidate.push( { y: y, dir: -1, x1: x, x2: x + 1 } );
+							if ( !sideCollide(world.getBlock( x, y + 1, z )) ) xyCandidate.push( { y: y + 1, dir: 1, x1: x, x2: x + 1 } );
 						}
 					}
 				}
@@ -201,10 +241,13 @@ Module.add('body',function(){
 			{
 				for ( var y = bPos.y - 1; y <= bPos.y + 1; y++ )
 				{
-					if ( world.getBlock( x, y, newBZLower ) != BLOCK.AIR )
-						zCandidate.push( { z: newBZLower + 1, dir: 1, x1: x, y1: y, x2: x + 1, y2: y + 1 } );
-					if ( world.getBlock( x, y, newBZUpper ) != BLOCK.AIR )
-						zCandidate.push( { z: newBZUpper, dir: -1, x1: x, y1: y, x2: x + 1, y2: y + 1 } );
+					let b0 = world.getBlock( x, y, newBZLower );
+					if ( b0.collide !== false && !b0.fluid )
+						zCandidate.push( { z: newBZLower + 1, dir: 1, x1: x, y1: y, x2: x + 1, y2: y + 1, fluid: false/*b0.fluid*/ } );
+					
+					let b1 = world.getBlock( x, y, newBZUpper )
+					if ( b1.collide !== false && !b1.fluid )
+						zCandidate.push( { z: newBZUpper, dir: -1, x1: x, y1: y, x2: x + 1, y2: y + 1, fluid: false /*b1.fluid*/ } );
 				}
 			}
 
@@ -216,23 +259,39 @@ Module.add('body',function(){
 			if( forceStand ) {
 				velocity.z = 0.01;
 			}
+
+			if( world.getBlock(bPos.x,bPos.y,bPos.z).fluid ) {
+				result.inFluid = true;
+			}
+
+			let eyeZ = pos.z + this.getEyeHeight(forceStand);
+			if( world.getBlock(bPos.x,bPos.y,Math.floor(eyeZ)).isAir ) {
+				result.atSurface = true;
+			}
+
+			let foundCollision = false;
 			for ( var i in zCandidate )
 			{
 				var face = zCandidate[i];
 
 				if ( rectRectCollide( face, playerFace ) && velocity.z * face.dir < 0 )
 				{
-					if ( velocity.z < 0 ) {
-						pos.z = face.z;
-						velocity.z = 0;
-						result.landed = true;
-					} else {
-						pos.z = face.z - (this.getHeadHeight());
-						velocity.z = 0;
-						result.bonkHead = true;
+					if( face.fluid ) {
+						result.inFluid = true;
+						continue;
 					}
-
-					break;
+					if( !foundCollision ) {
+						if ( velocity.z < 0 ) {
+							pos.z = face.z;
+							velocity.z = 0;
+							result.landed = true;
+						} else {
+							pos.z = face.z - (this.getHeadHeight());
+							velocity.z = 0;
+							result.bonkHead = true;
+						}
+						foundCollision = true;
+					}
 				}
 			}
 			result.pos = pos;
@@ -242,11 +301,19 @@ Module.add('body',function(){
 			return result;
 		}
 
-		resolveCollision( pos, bPos, velocity )
+		resolveCollision( pos, velocity )
 		{
+			let vz = velocity.z;
 			// Collect XY collision sides
-			let result = this.detectCollision(pos,bPos,velocity);
+			if( velocity.z == 0 ) {
+				velocity.z = -0.001;
+			}
+			let result = this.detectCollision(pos,velocity);
 
+			//console.log('landed: '+result.landed+' inFluid: '+result.inFluid+' vz='+vz );
+
+			this.inFluid   = result.inFluid;
+			this.atSurface = result.atSurface;
 			if( result.landed ) {
 				this.falling = false;
 				this.velocity.z = 0;
@@ -268,3 +335,6 @@ Module.add('body',function(){
 	}
 
 });
+
+
+

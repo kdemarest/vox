@@ -1,3 +1,6 @@
+Module.add( 'blocks', function() {
+
+
 // ==========================================
 // Block types
 //
@@ -20,7 +23,9 @@ BLOCK.AIR = {
 	id: 0,
 	spawnable: false,
 	transparent: true,
-	mayMove: true
+	isAir: true,
+	mayMove: true,
+	collide: false,
 };
 
 // Bedrock
@@ -38,7 +43,6 @@ BLOCK.DIRT = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/dirt.png',
 };
 
@@ -49,7 +53,6 @@ BLOCK.WOOD = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/oak_planks.png',
 };
 
@@ -61,7 +64,6 @@ BLOCK.TORCH = {
 	selflit: true,
 	light: { mag: 8, r:1.0, g:1.0, b:1.0 },
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/torch.png',
 };
 
@@ -73,7 +75,6 @@ BLOCK.BOOKCASE = {
 	selflit: false,
 	light: { mag: 2, r:1.0, g: 1.0, b: 1.0 },
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/bookshelf.png',
 };
 
@@ -96,7 +97,6 @@ BLOCK.PLANK = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/oak_planks.png',
 };
 
@@ -107,7 +107,6 @@ BLOCK.COBBLESTONE = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/cobblestone.png',
 };
 
@@ -118,7 +117,6 @@ BLOCK.CONCRETE = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 };
 
 // Brick
@@ -128,7 +126,6 @@ BLOCK.BRICK = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/bricks.png',
 
 };
@@ -140,7 +137,6 @@ BLOCK.SAND = {
 	transparent: false,
 	selflit: false,
 	gravity: true,
-	fluid: false,
 	textureStem: 'block/sand.png',
 };
 
@@ -151,7 +147,6 @@ BLOCK.GRAVEL = {
 	transparent: false,
 	selflit: false,
 	gravity: true,
-	fluid: false,
 	textureStem: 'block/gravel.png',
 };
 
@@ -162,7 +157,6 @@ BLOCK.IRON = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/iron_ore.png',
 };
 
@@ -173,7 +167,6 @@ BLOCK.GOLD = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/gold_ore.png',
 };
 
@@ -184,7 +177,6 @@ BLOCK.DIAMOND = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/diamond_block.png',
 };
 
@@ -196,7 +188,6 @@ BLOCK.OBSIDIAN = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/obsidian.png',
 };
 
@@ -205,9 +196,9 @@ BLOCK.GLASS = {
 	id: 17,
 	spawnable: true,
 	transparent: true,
+	trans: true,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/glass.png',
 };
 
@@ -218,7 +209,6 @@ BLOCK.SPONGE = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/sponge.png',
 };
 
@@ -227,10 +217,11 @@ BLOCK.WATER = {
 	id: 19,
 	spawnable: true,
 	transparent: true,
+	trans: true,
 	selflit: false,
 	gravity: false,
 	fluid: true,
-	textureStem: 'block/water.png',
+	textureStem: 'block/waterBoldBlue.png',
 };
 
 // TNT
@@ -240,7 +231,6 @@ BLOCK.TNT = {
 	transparent: false,
 	selflit: false,
 	gravity: false,
-	fluid: false,
 	textureStem: 'block/tnt_side.png',
 };
 
@@ -268,11 +258,6 @@ BLOCK.fromId = function( id )
 			return BLOCK[mat];
 	return null;
 }
-
-// pushVertices( vertices, world, x, y, z )
-//
-// Pushes the vertices necessary for rendering a
-// specific block into the array.
 
 let LIGHT = new class {
 	constructor() {
@@ -302,7 +287,11 @@ BLOCK.getTx = function(block,world,x,y,z,dir) {
 	return c;
 }
 
-BLOCK.pushVertices = function( vertices, world, x, y, z )
+// pushVertices( vSolid, vTrans, world, x, y, z )
+//
+// Pushes the vertices necessary for rendering a
+// specific block into the array.
+BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 {
 	var blocks = world.blocks;
 	var lightMap  = world.lightMap;
@@ -311,8 +300,11 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	let lightMax = LIGHT.max;
 	let lightFull = [lightMax,lightMax,lightMax];
 
+	let trans = block.trans;
+	let id = block.id;
+
 	// Top
-	if ( z == world.sz - 1 || world.blocks[x][y][z+1].transparent || block.fluid )
+	if ( z == world.sz - 1 || (world.blocks[x][y][z+1].transparent && world.blocks[x][y][z+1].id!=id) )
 	{
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.UP );
 
@@ -325,7 +317,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 		//var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
 
 		pushQuad(
-			vertices,
+			block.trans ? vTrans : vSolid,
 			[ x, y, z + bH,				c[0], c[1], r, g, b, 1.0 ],
 			[ x + 1.0, y, z + bH,		c[2], c[1], r, g, b, 1.0 ],
 			[ x + 1.0, y + 1.0, z + bH, c[2], c[3], r, g, b, 1.0 ],
@@ -334,7 +326,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	}
 	
 	// Bottom
-	if ( z == 0 || world.blocks[x][y][z-1].transparent )
+	if ( z == 0 || (world.blocks[x][y][z-1].transparent && world.blocks[x][y][z-1].id!=id) )
 	{
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.DOWN );
 		
@@ -344,7 +336,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
-			vertices,							
+			block.trans ? vTrans : vSolid,
 			[ x, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
 			[ x + 1.0, y + 1.0, z,	c[2], c[3], r, g, b, 1.0 ],
 			[ x + 1.0, y, z,		c[2], c[1], r, g, b, 1.0 ],
@@ -353,7 +345,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	}
 	
 	// Front
-	if ( y == 0 || world.blocks[x][y-1][z].transparent )
+	if ( y == 0 || (world.blocks[x][y-1][z].transparent && world.blocks[x][y-1][z].id!=id) )
 	{
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.FORWARD );
 		
@@ -363,7 +355,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
-			vertices,
+			block.trans ? vTrans : vSolid,
 			[ x, y, z,				c[0], c[3], r, g, b, 1.0 ],
 			[ x + 1.0, y, z,		c[2], c[3], r, g, b, 1.0 ],
 			[ x + 1.0, y, z + bH,	c[2], c[1], r, g, b, 1.0 ],
@@ -372,7 +364,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	}
 	
 	// Back
-	if ( y == world.sy - 1 || world.blocks[x][y+1][z].transparent )
+	if ( y == world.sy - 1 || (world.blocks[x][y+1][z].transparent && world.blocks[x][y+1][z].id!=id) )
 	{
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.BACK );
 		
@@ -382,7 +374,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
-			vertices,
+			block.trans ? vTrans : vSolid,
 			[ x, y + 1.0, z + bH,		c[2], c[1], r, g, b, 1.0 ],
 			[ x + 1.0, y + 1.0, z + bH,	c[0], c[1], r, g, b, 1.0 ],
 			[ x + 1.0, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
@@ -391,7 +383,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	}
 	
 	// Left
-	if ( x == 0 || world.blocks[x-1][y][z].transparent )
+	if ( x == 0 || (world.blocks[x-1][y][z].transparent && world.blocks[x-1][y][z].id!=id) )
 	{
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.LEFT );
 		
@@ -401,7 +393,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
-			vertices,
+			block.trans ? vTrans : vSolid,
 			[ x, y, z + bH,			c[2], c[1], r, g, b, 1.0 ],
 			[ x, y + 1.0, z + bH,	c[0], c[1], r, g, b, 1.0 ],
 			[ x, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
@@ -410,7 +402,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	}
 	
 	// Right
-	if ( x == world.sx - 1 || world.blocks[x+1][y][z].transparent )
+	if ( x == world.sx - 1 || (world.blocks[x+1][y][z].transparent && world.blocks[x+1][y][z].id!=id) )
 	{
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.RIGHT );
 		
@@ -420,7 +412,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 		let b = LIGHT.mag[ m[2] ];
 		
 		pushQuad(
-			vertices,
+			block.trans ? vTrans : vSolid,
 			[ x + 1.0, y, z,			c[0], c[3], r, g, b, 1.0 ],
 			[ x + 1.0, y + 1.0, z,		c[2], c[3], r, g, b, 1.0 ],
 			[ x + 1.0, y + 1.0, z + bH,	c[2], c[1], r, g, b, 1.0 ],
@@ -429,7 +421,7 @@ BLOCK.pushVertices = function( vertices, world, x, y, z )
 	}
 }
 
-// pushPickingVertices( vertices, x, y, z )
+// pushPickingVertices( vSolid, vTrans, x, y, z )
 //
 // Pushes vertices with the data needed for picking.
 
@@ -491,3 +483,10 @@ BLOCK.pushPickingVertices = function( vertices, x, y, z )
 		[ x + 1, y, z + 1, 0, 0, color.r, color.g, color.b, 6/255 ]
 	);
 }
+
+return {
+	BLOCK: BLOCK,
+	DIRECTION: DIRECTION
+}
+
+});

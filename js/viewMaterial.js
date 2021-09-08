@@ -17,6 +17,7 @@ let ViewMaterial = class {
 		{
 			if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat]!==null && BLOCK[mat].spawnable == true )
 			{
+				console.log(mat);
 				var selector = document.createElement( "td" );
 				selector.style.backgroundPosition = texOffset + "px 0px";
 

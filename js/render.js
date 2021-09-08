@@ -8,30 +8,34 @@ Module.add('renderer',function(){
 	// ==========================================
 
 	// Shaders
-	var blockVertexSource =
-		"uniform mat4 uProjMatrix;"+
-		"uniform mat4 uViewMatrix;"+
-		"uniform mat4 uModelMatrix;"+
-		"attribute vec3 aPos;"+
-		"attribute vec4 aColor;"+
-		"attribute vec2 aTexCoord;"+
-		"varying vec4 vColor;"+
-		"varying vec2 vTexCoord;"+
-		"void main() {"+
-		"	gl_Position = uProjMatrix * uViewMatrix * ( uModelMatrix * vec4( aPos, 1.0 ) );"+
-		"	vColor = aColor;"+
-		"	vTexCoord = aTexCoord;"+
-		"}";
-	var blockFragmentSource =
-		"precision highp float;"+
-		"uniform sampler2D uSampler;"+
-		"varying vec4 vColor;"+
-		"varying vec2 vTexCoord;"+
-		"void main() {"+
-		"	vec4 color = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) ) * vec4( vColor.rgb, 1.0 );"+
-		"	if ( color.a < 0.1 ) discard;"+
-		"	gl_FragColor = vec4( color.rgb, vColor.a );"+
-		"}";
+	var blockVertexSource = `
+		uniform mat4 uProjMatrix;
+		uniform mat4 uViewMatrix;
+		uniform mat4 uModelMatrix;
+		attribute vec3 aPos;
+		attribute vec4 aColor;
+		attribute vec2 aTexCoord;
+		varying vec4 vColor;
+		varying vec2 vTexCoord;
+		void main() {
+			gl_Position = uProjMatrix * uViewMatrix * ( uModelMatrix * vec4( aPos, 1.0 ) );
+			vColor = aColor;
+			vTexCoord = aTexCoord;
+		}
+	`;
+	var blockFragmentSource = `
+		precision highp float;
+		uniform sampler2D uSampler;
+		varying vec4 vColor;
+		varying vec2 vTexCoord;
+		void main() {
+			// vColor is the tinting from the light source, so we want the texture's rgba
+			// tinted by the vColor rgb, then combined with the background rgba
+			vec4 color = texture2D( uSampler, vec2( vTexCoord.s, vTexCoord.t ) );
+			if ( color.a < 0.1 ) discard;
+			gl_FragColor = vec4( color.rgb * vColor.rgb, color.a );
+		}
+	`;
 
 	// buildChunks( count )
 	//
@@ -48,9 +52,6 @@ Module.add('renderer',function(){
 		v.push( p1[0], p1[1], p1[2], p1[3], p1[4], p1[5], p1[6], p1[7], p1[8] );
 	}
 
-	function glInit() {
-	}
-
 	class OpenGl {
 		constructor( id ) {
 			var canvas = this.canvas = document.getElementById( id );
@@ -63,7 +64,9 @@ Module.add('renderer',function(){
 			{
 				// Ken added this attrib so that we wouldn't have seams between wall triangles.
 				let glAttribs = {
-					antialias: false
+					antialias: false,
+					alpha: false
+					//premultipliedAlpha: false
 				}
 				gl = this.gl = canvas.getContext( "webgl", glAttribs );
 			} catch ( e ) {
@@ -77,42 +80,8 @@ Module.add('renderer',function(){
 			gl.enable( gl.DEPTH_TEST );
 			gl.enable( gl.CULL_FACE );	// and the culling mode defaults to gl.BACK
 			gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
-			gl.disable( gl.BLEND );
+			gl.enable( gl.BLEND );
 		}
-	}
-
-	function createTextureFromImage(image) {
-		let gl = window.openGl.gl;
-		let texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-
-		// Set the parameters so we can render any size image.
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-		// Upload the image into the texture.
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-		return texture;
-	}
-
-	function createTextureBlank(xLen,yLen) {
-		let gl = window.openGl.gl;
-		let texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-
-		// Set the parameters so we can render any size image.
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-		// Upload the image into the texture.
-		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, xLen, yLen, 0, gl.RGBA, gl.UNSIGNED_BYTE, null );
-
-		return texture;
 	}
 
 	class Atlas extends TextureWriter {
@@ -146,7 +115,6 @@ Module.add('renderer',function(){
 		}
 	}
 
-
 	class ShaderSet {
 		constructor() {
 			this.gl = window.openGl.gl;
@@ -171,6 +139,10 @@ Module.add('renderer',function(){
 			if ( !gl.getProgramParameter( this.program, gl.LINK_STATUS ) ) {
 				throw "Could not link the shader program!";
 			}
+			return this;
+		}
+		use() {
+			var gl = this.gl;
 			gl.useProgram( this.program );
 			return this;
 		}
@@ -182,12 +154,15 @@ Module.add('renderer',function(){
 			let canvas = this.canvas = openGl.canvas; 
 			canvas.renderer = this;
 
+			this.pickBlock = new PickBlock(gl);
+
 			// Load shaders
 			this.blockShaders =
 				new ShaderSet()
 				.fetch( blockVertexSource, gl.VERTEX_SHADER )
 				.fetch( blockFragmentSource, gl.FRAGMENT_SHADER )
 				.link()
+				.use();
 			;
 			// Store variable locations
 			let program = this.blockShaders.program;
@@ -275,6 +250,8 @@ Module.add('renderer',function(){
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 			this.updateViewport();
 			gl.viewport( 0, 0, gl.viewportWidth, gl.viewportHeight );
+			gl.enable( gl.BLEND );
+			gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );
 			gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
 			gl.uniformMatrix4fv( this.uViewMat, false, this.viewMatrix );
@@ -285,13 +262,19 @@ Module.add('renderer',function(){
 			var chunks = this.chunks;
 			
 			gl.bindTexture( gl.TEXTURE_2D, this.atlas.texture ); //this.texTerrain );
-			
+
 			if ( chunks != null )
 			{
 				for ( var i = 0; i < chunks.length; i++ )
 				{
-					if ( chunks[i].buffer != null ) 
-						this.drawBuffer( chunks[i].buffer );
+					if ( chunks[i].bSolid != null ) 
+						this.drawBuffer( chunks[i].bSolid );
+				}
+
+				for ( var i = 0; i < chunks.length; i++ )
+				{
+					if ( chunks[i].bTrans != null ) 
+						this.drawBuffer( chunks[i].bTrans );
 				}
 			}
 			
@@ -304,107 +287,6 @@ Module.add('renderer',function(){
 		}
 
 
-		// pickAt( min, max, mx, myy )
-		//
-		// Returns the block at mouse position mx and my.
-		// The blocks that can be reached lie between min and max.
-		//
-		// Each side is rendered with the X, Y and Z position of the
-		// block in the RGB color values and the normal of the side is
-		// stored in the color alpha value. In that way, all information
-		// can be retrieved by simply reading the pixel the mouse is over.
-		//
-		// WARNING: This implies that the level can never be larger than
-		// 254x254x254 blocks! (Value 255 is used for sky.)
-
-		pickAt( min, max, mx, my )
-		{
-			var gl = this.gl;
-			var world = this.world;
-
-			gl.useProgram( this.blockShaders.program );
-			gl.enableVertexAttribArray( this.aPos );
-			gl.enableVertexAttribArray( this.aColor );
-			gl.enableVertexAttribArray( this.aTexCoord );
-			
-			// Create framebuffer for picking render
-			var fbo = gl.createFramebuffer();
-			gl.bindFramebuffer( gl.FRAMEBUFFER, fbo );
-			
-			var bt = gl.createTexture();
-			gl.bindTexture( gl.TEXTURE_2D, bt );
-			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
-			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
-			gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, null );
-			
-			var renderbuffer = gl.createRenderbuffer();
-			gl.bindRenderbuffer( gl.RENDERBUFFER, renderbuffer );
-			gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 512, 512 );
-			
-			gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, bt, 0 );
-			gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer );
-			
-			// Build buffer with block pick candidates
-			var vertices = [];
-			
-			for ( var x = min.x; x <= max.x; x++ ) {
-				for ( var y = min.y; y <= max.y; y++ ) {
-					for ( var z = min.z; z <= max.z; z++ ) {
-						if ( world.getBlock( x, y, z ) != BLOCK.AIR )
-							BLOCK.pushPickingVertices( vertices, x, y, z );
-					}
-				}
-			}
-			
-			var buffer = gl.createBuffer();
-			buffer.vertices = vertices.length / 9;
-			gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-			gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STREAM_DRAW );
-			
-			// Draw buffer
-			gl.bindTexture( gl.TEXTURE_2D, this.texWhite );
-			
-			gl.viewport( 0, 0, 512, 512 );
-			gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
-			gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-			
-			this.drawBuffer( buffer );
-			
-			// Read pixel
-			var pixel = new Uint8Array( 4 );
-			gl.readPixels( mx/gl.viewportWidth*512, (1-my/gl.viewportHeight)*512, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel );
-			
-			// Clean up
-			gl.deleteBuffer( buffer );
-			gl.deleteRenderbuffer( renderbuffer );
-			gl.deleteTexture( bt );
-			gl.deleteFramebuffer( fbo );
-
-			gl.disableVertexAttribArray( this.aPos );
-			gl.disableVertexAttribArray( this.aColor );
-			gl.disableVertexAttribArray( this.aTexCoord );
-			
-			// Build result
-			if ( pixel[0] != 255 )
-			{
-				var normal;
-				if ( pixel[3] == 1 ) normal = new Vector( 0, 0, 1 );
-				else if ( pixel[3] == 2 ) normal = new Vector( 0, 0, -1 );
-				else if ( pixel[3] == 3 ) normal = new Vector( 0, -1, 0 );
-				else if ( pixel[3] == 4 ) normal = new Vector( 0, 1, 0 );
-				else if ( pixel[3] == 5 ) normal = new Vector( -1, 0, 0 );
-				else if ( pixel[3] == 6 ) normal = new Vector( 1, 0, 0 );
-				
-				return {
-					x: pixel[0],
-					y: pixel[1],
-					z: pixel[2],
-					n: normal
-				}
-			} else {
-				return false;
-			}
-		}
 
 		// updateViewport()
 		//
@@ -503,25 +385,31 @@ Module.add('renderer',function(){
 				
 				if ( chunk.dirty )
 				{
-					var vertices = [];
+					var vSolid = [];
+					var vTrans = [];
 
 					// Add vertices for blocks
 					for ( var x = chunk.start[0]; x < chunk.end[0]; x++ ) {
 						for ( var y = chunk.start[1]; y < chunk.end[1]; y++ ) {
 							for ( var z = chunk.start[2]; z < chunk.end[2]; z++ ) {
 								if ( world.blocks[x][y][z] == BLOCK.AIR ) continue;
-								BLOCK.pushVertices( vertices, world, x, y, z );
+								BLOCK.pushVertices( vSolid, vTrans, world, x, y, z );
 							}
 						}
 					}
 					
 					// Create WebGL buffer
-					if ( chunk.buffer ) gl.deleteBuffer( chunk.buffer );
+					if ( chunk.bSolid ) gl.deleteBuffer( chunk.bSolid );
+					if ( chunk.bTrans ) gl.deleteBuffer( chunk.bTrans );
 					
-					var buffer = chunk.buffer = gl.createBuffer();
-					buffer.vertices = vertices.length / 9;
-					gl.bindBuffer( gl.ARRAY_BUFFER, buffer );
-					gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STATIC_DRAW );
+					chunk.bSolid = gl.createBuffer();
+					chunk.bTrans = gl.createBuffer();
+					chunk.bSolid.vertices = vSolid.length / 9;
+					chunk.bTrans.vertices = vTrans.length / 9;
+					gl.bindBuffer( gl.ARRAY_BUFFER, chunk.bSolid );
+					gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vSolid ), gl.STATIC_DRAW );
+					gl.bindBuffer( gl.ARRAY_BUFFER, chunk.bTrans );
+					gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vTrans ), gl.STATIC_DRAW );
 					
 					chunk.dirty = false;
 					count--;
@@ -588,6 +476,7 @@ Module.add('renderer',function(){
 	return {
 		OpenGl: OpenGl,
 		Renderer: Renderer,
+		ShaderSet: ShaderSet,
 		pushQuad: pushQuad
 	}
 
