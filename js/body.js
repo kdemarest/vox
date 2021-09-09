@@ -89,7 +89,7 @@ Module.add('body',function(){
 				if( this.inFluid ) {
 					if( this.jump ) {
 						if( this.atSurface ) {
-							velocity.z = 4;
+							velocity.z = 1;
 						}
 						else {
 							velocity.z = 0.4;

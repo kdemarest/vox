@@ -66,7 +66,7 @@ Plugin.Manager = new class {
 				reject(pluginId);
 			}
 			jsElement.setAttribute("type","text/javascript")
-			jsElement.setAttribute("src", status.url)
+			jsElement.setAttribute("src", window.PLUGIN_BASE+status.url)
 
 			if (typeof jsElement!="undefined") {
 				document.getElementsByTagName("head")[0].appendChild(jsElement)

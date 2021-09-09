@@ -25,10 +25,10 @@ class Game {
 		Module.realize();
 
 		// We condition the heck out of our data, and we have to do it in the right order.
-//		Type.establish('PLUGINS',{});
-//		Type.register('PLUGINS', Plugin.Manager.list );
-//		Type.merge();
-//		Type.finalize( checkerFn() );
+		Type.establish('PLUGINS',{});
+		Type.register('PLUGINS', Plugin.Manager.list );
+		Type.merge();
+		Type.finalize( checkerFn() );
 	}
 
 	async initImages(onImageCompleteFn,interval=250) {

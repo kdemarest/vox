@@ -29,12 +29,12 @@ class World {
 		this.blocks = array3(sx,sy,sz,()=>BLOCK.AIR);
 		this.lightMap  = array3(sx,sy,sz,()=>[0.0,0.0,0.0]);
 
-		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, 16 );
+		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, Math.floor(sz/2) );
 
 		return this;
 	}
 	createFlatWorld( height ) {
-		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, height );
+		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, Math.floor(height/2) );
 		
 		for ( var x = 0; x < this.sx; x++ )
 			for ( var y = 0; y < this.sy; y++ )

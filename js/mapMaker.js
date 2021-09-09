@@ -6,48 +6,6 @@ let MapMaker = class {
 		this.map = new SimpleMap( mapString );
 		this.map.allowUnknown = true;
 	}
-	triple() {
-		let tFloor = '.';
-		let tWall  = '#';
-		let tDoor  = '+';
-
-		let target = new SimpleMap(SimpleMap.fillTextMap(this.map.xLen*3,this.map.yLen*3,tFloor));
-		target.allowUnknown = true;
-
-		this.map.traverse( (x,y,type) => {
-			let tx = x*3;
-			let ty = y*3;
-			let symbol = this.map.tileSymbolGetFastUnasfe(x,y);
-			if( !type ) {
-				return;
-			}
-			let region = [tx,ty,3,3];
-			if( type.isWall || type.isPit ) {
-				target.traverseRegion(...region,(tx,ty)=>{
-					target.tileSymbolSet(tx,ty,symbol);
-				});
-				return;
-			}
-			if( symbol==tDoor ) {
-				if( this.map.tileSymbolGet(x,y-1)==tFloor ) {
-					target.tileSymbolSet(tx+0,ty+1,tWall);
-					target.tileSymbolSet(tx+1,ty+1,tDoor);
-					target.tileSymbolSet(tx+2,ty+1,tWall);
-				}
-				if( this.map.tileSymbolGet(x-1,y)==tFloor ) {
-					target.tileSymbolSet(tx+1,ty+0,tWall);
-					target.tileSymbolSet(tx+1,ty+1,tDoor);
-					target.tileSymbolSet(tx+1,ty+2,tWall);
-				}
-				return;
-			}
-			if( type.isSingular ) {
-				target.tileSymbolSet(tx+1,ty+1,symbol);
-			}
-		});
-		this.map = target;
-		return this;
-	}
 	makeIntoWorld(world) {
 		let wz = 7;
 		let blocks = world.blocks;
@@ -60,6 +18,15 @@ let MapMaker = class {
 				world.spawnPoint = new Vector( bx + 0.5, by + 0.5, wz+1 );
 			}
 
+			if( type.isBridge ) {
+				blocks[bx][by][wz-3] = BLOCK.BEDROCK;
+				blocks[bx][by][wz-2] = BLOCK.AIR;
+				blocks[bx][by][wz-1] = BLOCK.AIR;
+				blocks[bx][by][wz+0] = BLOCK.PLANK;
+				blocks[bx][by][wz+1] = BLOCK.AIR;
+				blocks[bx][by][wz+2] = BLOCK.AIR;
+				blocks[bx][by][wz+3] = BLOCK.AIR;
+			} else
 			if( type.isWall ) {
 				if( this.map.tileTypeGetDir(x,y,0).isDoor || this.map.tileTypeGetDir(x,y,2).isDoor || this.map.tileTypeGetDir(x,y,4).isDoor || this.map.tileTypeGetDir(x,y,6).isDoor ) {
 					blocks[bx][by][wz+1] = BLOCK.BRICK;
@@ -95,7 +62,7 @@ let MapMaker = class {
 				blocks[bx][by][wz+2] = BLOCK.AIR;
 				blocks[bx][by][wz+3] = BLOCK.AIR;
 			} else
-			if( type.isFloor ) {
+			if( type.isFloor && !type.isBridge ) {
 				let height = Random.Pseudo.intBell(3, 5);
 				for( let z=0 ; z<height ; ++z ) {
 					blocks[bx][by][wz+1+z] = BLOCK.AIR;
@@ -107,8 +74,8 @@ let MapMaker = class {
 				blocks[bx][by][wz+3] = BLOCK.AIR;
 			}
 
-			if( type.isLight ) {
-				blocks[bx][by][wz+2] = BLOCK.TORCH;
+			if( type.isLight || ((type.isWall || type.isBridge || type.isPit) && Random.Pseudo.chance100(2)) ) {
+				blocks[bx][by][wz+4] = BLOCK.TORCH;
 			}
 
 		});

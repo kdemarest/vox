@@ -10,19 +10,40 @@
 <link href="style/main.css" rel="stylesheet" type="text/css">
 
 <!-- Modules -->
+<script src="js/jquery.3.3.1.js" charset="utf-8"></script>
 <script src="js/glMatrix-1.2.min.js" type="text/javascript"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
 
 <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
 <script src="js/utilModule.js" type="text/javascript"></script>
-<script src="js/utilities.js" type="text/javascript"></script>
 <script src="js/utilPlugin.js" type="text/javascript"></script>
+<script src="js/utilities.js" type="text/javascript"></script>
+<script src="js/utilPick.js" type="text/javascript"></script>
+<script src="js/utilChance.js" type="text/javascript"></script>
+<script src="js/types.js" type="text/javascript"></script>
+<script src="js/data.js" type="text/javascript"></script>
+<script src="js/dataStickers.js" type="text/javascript"></script>
+<script src="js/rules.js" charset="utf-8"></script>
+<script src="js/dataPicker.js" charset="utf-8"></script>
+<script src="js/dataTiles.js" charset="utf-8"></script>
+<script src="js/dataEffects.js" charset="utf-8"></script>
+<script src="js/dataItems.js" charset="utf-8"></script>
+<script src="js/dataMonsters.js" charset="utf-8"></script>
+<script src="js/dataThemes.js" charset="utf-8"></script>
+<script src="js/dataPlaces.js" charset="utf-8"></script>
+<script src="js/dataChecker.js" charset="utf-8"></script>
+<script src="js/dataPicker.js" charset="utf-8"></script>
+<script src="js/dataMason.js" charset="utf-8"></script>
+<script src="js/path.js" charset="utf-8"></script>
+<script src="js/place.js" charset="utf-8"></script>
+
+<script src="js/map.js" type="text/javascript"></script>
+<script src="js/mapMaker.js" type="text/javascript"></script>
+
+
 <script src="js/textureWriter.js" type="text/javascript"></script>
 <script src="js/textureRepo.js" type="text/javascript"></script>
 <script src="js/config.js" type="text/javascript"></script>
-<script src="js/data.js" type="text/javascript"></script>
-<script src="js/map.js" type="text/javascript"></script>
-<script src="js/mapMaker.js" type="text/javascript"></script>
 <script src="js/light.js" type="text/javascript"></script>
 <script src="js/world.js" type="text/javascript"></script>
 <script src="js/blocks.js" type="text/javascript"></script>
@@ -37,113 +58,6 @@
 <script src="js/game.js" type="text/javascript"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
-
-<script type="text/javascript">
-Module.add( 'main', ()=> {
-
-	let globalMapString = ``+
-	`############################################\n`+
-	`#.....######################*###############\n`+
-	`#####+##..B.........ttttttttttttttttt#######\n`+
-	`##.................########::::#####ttt#####\n`+
-	`##.......::.N.......www..####:::######t#####\n`+
-	`##....%..::NCN......##w..#::::::##:###t#####\n`+
-	`##....*..........-:::-w.:::::::##::###t#####\n`+
-	`##...........###+#::::w.::::::::::::.#t#####\n`+
-	`##..444......###.:::::w.:::::::::::#.#t#####\n`+
-	`##..444......==..:::::w#::::::::::::...#####\n`+
-	`##...4...#.#####.-:::-w::::::::::::.....####\n`+
-	`##www4www#.#¥.¥#......w.:::::::::::..*....##\n`+
-	`##www4ww##.#¥¥¥#........#::::::::::.......##\n`+
-	`##www4ww##.#¥¥¥#........#::::::::::.......##\n`+
-	`##wwwwww#*.&#..#222.......::::::::...MM...##\n`+
-	`###wwww####.&#.#2222.......::::::.##.MM...##\n`+
-	`###ww#######...#2222..............##......##\n`+
-	`##########.###&#####+######+####..........##\n`+
-	`###.......##...................##.-:::-...*#\n`+
-	`###...##*......................###:::::...##\n`+
-	`###...######...NNN......#+#....###:::::...##\n`+
-	`#######&........U.......+*+....###:::::...##\n`+
-	`######&.####..C.°.C.....#+#.......-:::-...##\n`+
-	`######.##¥¥#............................####\n`+
-	`######.#.¥.#............................####\n`+
-	`######...¥¥#......2............C........####\n`+
-	`############.....2::22...........N......####\n`+
-	`##########......2:::::2........°UN.....#####\n`+
-	`########.......2:::::::2.........N.....#####\n`+
-	`######..........::::::::2......C.......#####\n`+
-	`#####........22:::::::::2.............######\n`+
-	`#####........:::::::::::2.............######\n`+
-	`###....W.W..2::::::::::::.....-:::-..#######\n`+
-	`##....W.WW...2:::::::::::2....:::::..#######\n`+
-	`##...W.W......2:::::::::2.....:::::.....####\n`+
-	`##....W..W.....2:::.:::2......:::::......###\n`+
-	`##...W.W........2:2.222....N..-:::-.....####\n`+
-	`####........N....22.......NCN.......MM..####\n`+
-	`######.....NCN.............N..MM*...MM..####\n`+
-	`#######.....N..##.............MM.........###\n`+
-	`##########.....##.####...................###\n`+
-	`##########......#######..##..............###\n`+
-	`##############.########..##..............###\n`+
-	`############################################\n`
-	;
-
-	let Tile = {
-		UNKNOWN: '?'
-	}
-
-	let SymbolToType = {
-		'#': {
-			isWall: true
-		},
-		'.': {
-			isFloor: true,
-			block: BLOCK.DIRT
-		},
-		'+': {
-			isDoor: true
-		},
-		':': {
-			isPit: true
-		},
-		'4': {
-			isFloor: true,
-			block: BLOCK.WOOD
-		},
-		'2': {
-			isFloor: true,
-			block: BLOCK.LAVA
-		},
-		't': {
-			isTunnel: true
-		},
-		'=': {
-			isWindow: true,
-		},
-		'w': {
-			isPit: true,
-			isWater: true,
-		},
-		'*': {
-			isLight: true,
-			isFloor: true,
-			isSingular: true
-		},
-		'%': {
-			isSpawn: true,
-			isFloor: true
-		},
-
-	}
-	return {
-		Tile: Tile,
-		Direction: Direction,
-		SymbolToType: SymbolToType,
-		globalMapString: globalMapString
-	}
-
-});
-</script>
 
 </head>
 
@@ -246,6 +160,58 @@ console.log = (...args) => {
 	consoleLog(consoleCount,...args);
 }
 
+function mapGenerate() {
+
+	let palette = {
+		bridge:			"bridge",
+		door:			"door",
+		fillFloor:		"floorDirt",
+		fillWall:		"wallCave",
+		floor:			"floorDirt",
+		outlineWall:	"wallCave",
+		passageFloor:	"floorStone",
+		wall:			"wallCave"
+	};
+
+	let sideDimension = 150; //Random.intRange(40,150);
+
+	// Floor Density
+	// 0.10 - 0.30 - spindly maps. Below 0.10 it is all just passage.
+	// 0.40 - 0.50 - lanky, with generally thick passages
+	// 0.60 - 0.70 - Pretty chunky rooms
+	// 0.80 - 0.90 - Vast open spaces with stone columns intruding
+	// Seed Percent
+	// Lower number (0.05) means each room is more consolidated
+	// Higher number (0.50) means lots of little rooms that connect.
+	// floor=0.50, seed 0.02, passageWander false, makes nice connected rooms
+
+	let level = 1;
+	let theme = ThemeList.coreBridges; //caveRoomsNarrowlyConnected; //coreBridges; //dwarfVillage; //coreCavernRooms;
+	theme = Object.assign( {}, theme, ScapeList[theme.scapeId]() );
+	theme.dim = sideDimension;
+	theme.depth = level;
+	//debugger;
+	//theme.palette = palette;
+	// NOTICE that I am NOT passing the theme's scape, but instead overriding it
+	// so that you can tweak it.
+
+
+	console.log(theme);
+
+	let injectList = [];
+	let tileQuota  = [];
+	let siteList   = [];
+
+	let masonMap = (new Mason).construct(
+		theme,
+		tileQuota,
+		injectList,
+		siteList
+	);
+	
+	return masonMap.renderToString();
+}
+
 
 async function main(){
 
@@ -254,16 +220,29 @@ async function main(){
 	}
 
 	window.IMG_BASE = "media/";
-	let pseudoRandomSeed = 12345;
+	let pseudoRandomSeed = 222;
 	let flogueConfigEnvVariableId = 'flogueConfigId';
 
 	window.openGl = new OpenGl( "renderSurface" );
 
 	let game = new Game( pseudoRandomSeed, flogueConfigEnvVariableId );
-	await game.initPlugins( [] );
+
+	let nullChecker = {
+		checkSupply: ()=>{},
+		checkLoot: ()=>{},
+		checkResistance: ()=>{}
+	};
+
+	window.PLUGIN_BASE = "js/";
+
+	await game.initPlugins( [ 'pkgPlantsBasic' ] );
+	await game.initTypes( ()=>nullChecker );
 	await game.initImages( onImageComplete, 250 );
 
-	let mapMaker = new MapMaker(globalMapString);
+	let mapString = mapGenerate();
+
+
+	let mapMaker = new MapMaker(mapString);
 	let world = new World();
 	world.init(mapMaker.map.xLen,mapMaker.map.yLen,16);
 

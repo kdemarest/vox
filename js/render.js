@@ -182,14 +182,6 @@ Module.add('renderer',function(){
 			this.modelMatrix = mat4.create();
 			mat4.identity( this.modelMatrix );
 			
-			// Create 1px white texture for pure vertex color operations (e.g. picking)
-			var whiteTexture = this.texWhite = gl.createTexture();
-			gl.activeTexture( gl.TEXTURE0 );
-			gl.bindTexture( gl.TEXTURE_2D, whiteTexture );
-			var white = new Uint8Array( [ 255, 255, 255, 255 ] );
-			gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, white );
-			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
-			gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
 			gl.uniform1i(  this.uSampler, 0 );
 
 			// Load terrain texture
@@ -218,12 +210,10 @@ Module.add('renderer',function(){
 			}
 			let assigned = false;
 			BLOCK.traverse( block => {
-//				if( block.id !== 2 && block.id !== 1 ) { assigned=true; return; }
 				if( block.textureStem == imgStem ) {
 					let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
 					console.log( imgStem,'at',rect);
 					block.atlasPixelRect = [rect];	// zero'th index means 'all directions use this rect'
-					//block.atlasPixelRect = [[0,0,1,1]];	// zero'th index means 'all directions use this rect'
 					assigned = true;
 					return;
 				}
@@ -233,6 +223,7 @@ Module.add('renderer',function(){
 
 			console.assert( assigned );
 		}
+
 		// draw()
 		//
 		// Render one frame of the world to the canvas.
@@ -270,6 +261,9 @@ Module.add('renderer',function(){
 					if ( chunks[i].bSolid != null ) 
 						this.drawBuffer( chunks[i].bSolid );
 				}
+
+				//this.drawBuffer( this.bEntities );
+
 
 				for ( var i = 0; i < chunks.length; i++ )
 				{
