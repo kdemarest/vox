@@ -26,6 +26,7 @@ Module.add('body',function(){
 			this.sprite = false;
 			this.forward = 0;
 			this.sideways = 0;
+			this.up = 0;
 			this.yaw = 0;
 			this.yawRate = Math.PI/100.0;
 			this.pitch = 0;
@@ -129,7 +130,7 @@ Module.add('body',function(){
 				if ( !this.falling || this.inFluid )
 				{
 					try {
-					var impulse = {x:0,y:0};
+					var impulse = {x:0,y:0,z:0};
 
 					let maxSpeed = (this.inFluid || this.crouch || this.crawl) ? 1.3 : this.sprint ? 6 : 4.3;
 					let fScale = maxSpeed;
@@ -147,6 +148,12 @@ Module.add('body',function(){
 						velocity.x = velocity.x / horizontalSpeed * horizontalCap;
 						velocity.y = velocity.y / horizontalSpeed * horizontalCap;
 					}
+
+					if( this.up ) {
+						impulse.z += this.up;
+						velocity.z = velocity.z * 0.0 + impulse.z;
+					}
+
 					} catch(e) {
 						debugger;
 					}

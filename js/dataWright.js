@@ -67,7 +67,7 @@ Module.add('dataWright',function() {
 		move(dir,slope,dist=1) {
 			console.assert( Coordinate.validateValue(this.x) );
 			console.assert( Coordinate.validateValue(this.y) );
-			console.assert( Number.isInteger(dist) && dist > 0 );
+			console.assert( Number.isInteger(dist) && dist >= 0 );
 			this.x += Dir.add[dir].x * dist;
 			this.y += Dir.add[dir].y * dist;
 			this.z += slope * dist;
@@ -155,65 +155,20 @@ Module.add('dataWright',function() {
 			return this.zoneId;
 		}
 		add(zone) {
-			this.list.unshift(zone);
+			console.assert( !this.list[zone.zoneId] );
+			this.list[zone.zoneId] = zone;
 		}
 	}
 
-	class Rake {
-		set(dir,x,y,z,width,loft) {
-			console.assert( Dir.validate(dir) );
-			console.assert( Coordinate.validateMany(x,y,z) );
-			console.assert( Number.isInteger(width) && width > 0 && width < 1000 );
-			console.assert( Number.isInteger(loft) && loft > 0 && loft < 1000 );
-
-			this.dir = dir;
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			this.width = width;
-			this.loft = loft;
-			return this;
-		}
-		stripe(fn,z=this.z,dist=0) {
-			let d = Dir.add[Dir.right(this.dir)];
-			let x = this.x;
-			let y = this.y;
-			for( let i=0 ; i<=this.width ; ++i ) {
-				for( let loft = 0 ; loft<=this.loft ; ++loft ) {
-					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),i,loft,dist);
-					if( ok === false ) {
-						return false;
-					}
-				}
-				x += d.x;
-				y += d.y;
-			}
-		}
-		traverse(fn) {
-			return this.stripe(fn,this.z,0);
-		}
+	let FLAG = {
+		LEFT: 1,
+		RIGHT: 2,
+		FLOOR: 4,
+		ROOF: 8,
+		START: 16,
+		END: 32
 	}
 
-	class RakePath extends Rake {
-		set(dir,x,y,z,width,loft,dist,slope) {
-			super.set(dir,x,y,z,width,loft);
-			console.assert( Number.isInteger(dist) && dist >= 0 );
-			console.assert( Number.isFinit(slope) && slope >= -9999 && slope <= 9999 );
-			this.dist  = dist;
-			this.slope = slope;
-			return this;
-		}
-		traverse(fn) {
-			let z = this.z;
-			for( let d=0 ; d<this.dist ; ++d ) {
-				let ok = this.stripe( fn, z, d );
-				if( ok === false ) {
-					return false;
-				}
-				z += this.slope;
-			}
-		}
-	}
 
 	class ChanceTo {
 		constructor(chance100) {
@@ -225,18 +180,27 @@ Module.add('dataWright',function() {
 	}
 
 	class Range {
-		constructor(min,max,curve='intRange') {
+		constructor(rMin,rMax,curve='intRange',offset=0,stride=1) {
 			console.assert( Rand[curve] );
-			if( curve=='intRange' ) {
-				console.assert( Number.isInteger(min) && Number.isInteger(max) );
+			if( curve=='intRange' || curve=='intBell' ) {
+				console.assert( Number.isInteger(rMin) && Number.isInteger(rMax) );
+				console.assert( Number.isInteger(offset) && Number.isInteger(stride) );
 			}
-			console.assert( min<=max );
-			this.min = min;
-			this.max = max;
+			console.assert( rMin<=rMax );
+			this.rMin = rMin;
+			this.rMax = rMax;
 			this.curve = curve;
+			this.offset = offset;
+			this.stride = stride;
+		}
+		get min() {
+			return this.offset+this.rMin*this.stride;
+		}
+		get max() {
+			return this.offset+this.rMax*this.stride;
 		}
 		roll() {
-			return Rand[this.curve](this.min,this.max);
+			return this.offset+Rand[this.curve](this.rMin,this.rMax)*this.stride;
 		}
 	}
 
@@ -245,14 +209,14 @@ Module.add('dataWright',function() {
 			this.setDefaults();
 		}
 		setDefaults() {
-			this.rgDist      = new Range(1,5,'intRange');
+			this.rgDist      = new Range(2,20,'intBell');
 			this.ctTurn      = new ChanceTo(50);
-			this.ctRise      = new ChanceTo(30);
-			this.ctFall      = new ChanceTo(30);
-			this.rgSlope     = new Range(0.5,1.0,'floatRange');
-			this.rgSlopeDist = new Range(1,5,'intRange');
-			this.ctWiden     = new ChanceTo(50);
-			this.rgWidth     = new Range(1,5,'intRange');
+			this.ctRise      = new ChanceTo(50);
+			this.ctFall      = new ChanceTo(100);
+			this.rgSlope     = new Range(0.5,0.5,'floatRange');
+			this.rgSlopeDist = new Range(5,5,'intRange');
+			this.ctWiden     = new ChanceTo(100);
+			this.rgWidth     = new Range(0,3,'intRange',1,2);
 			this.roofMin     = 5;
 			return this;
 		}
@@ -262,6 +226,78 @@ Module.add('dataWright',function() {
 			}
 			Object.assign( this, parameters );
 			return this;
+		}
+	}
+
+	class Rake {
+		set(dir,x,y,z,width,loft,sheath=0) {
+			console.assert( Dir.validate(dir) );
+			console.assert( Coordinate.validateMany(x,y,z) );
+			console.assert( Number.isInteger(width) && width > 0 && width < 1000 );
+			console.assert( Number.isInteger(loft) && loft > 0 && loft < 1000 );
+
+			this.dir = dir;
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.width = width;
+			this.loft = loft;
+			this.sheath = sheath;
+			return this;
+		}
+		get fullWidth() {
+			return this.width+(this.sheath*2);
+		}
+		stripe(fn,z=this.z,dist=0,distTotal=0) {
+			let ahead = Dir.add[this.dir];
+			let right = Dir.add[Dir.right(this.dir)];
+			let hw = Math.floor(this.width/2);
+			let x = this.x + ahead.x*dist - right.x*(hw+this.sheath);
+			let y = this.y + ahead.y*dist - right.y*(hw+this.sheath);
+
+			for( let i=-(hw+this.sheath) ; i<=hw+this.sheath ; ++i ) {
+				let flagLR;
+				flagLR |= (i<-hw ? FLAG.LEFT : 0) | (i>hw ? FLAG.RIGHT : 0);
+				flagLR |= (dist<0 ? FLAG.START : 0) | (dist>distTotal ? FLAG.END : 0);
+				for( let loft = -this.sheath ; loft<this.loft+this.sheath ; ++loft ) {
+					let flags = flagLR | (loft<0 ? FLAG.FLOOR : 0) | (loft>=this.loft ? FLAG.ROOF : 0);
+					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),i,loft,dist,flags);
+					if( ok === false ) {
+						return false;
+					}
+				}
+				x += right.x;
+				y += right.y;
+			}
+		}
+		traverse(fn) {
+			return this.stripe(fn,this.z,0,0);
+		}
+	}
+
+	class RakePath extends Rake {
+		set(dir,x,y,z,width,loft,dist,slope,sheath,capNear,capFar) {
+			super.set(dir,x,y,z,width,loft,sheath);
+			console.assert( Number.isInteger(dist) && dist >= 0 );
+			console.assert( typeof slope=='function' || (Number.isFinite(slope) && slope >= -9999 && slope <= 9999) );
+			this.dist  = dist;
+			this.slope = slope;
+			this.capNear = capNear;
+			this.capFar  = capFar;
+			this.zFinal = null;
+			return this;
+		}
+		traverse(fn) {
+			let z = this.z;
+			for( let d=-this.capNear ; d<this.dist+this.capFar ; ++d ) {
+				this.zFinal = z;
+				let ok = this.stripe( fn, z, d, this.dist );
+				if( ok === false ) {
+					return false;
+				}
+
+				z += (typeof this.slope == 'function') ? this.slope(d) : this.slope;
+			}
 		}
 	}
 
@@ -279,10 +315,22 @@ Module.add('dataWright',function() {
 			return this.remaining <= 0;
 		}
 		get zone() {
-			return this.zoneList.list[0];
+			return this.zoneList.list[this.zoneList.list.length-1];
 		}
 		get head() {
 			return this.headStack[0];
+		}
+		get last() {
+			return this.headStack[0].last;
+		}
+		getZone(zoneId) {
+			return this.zoneList.list[zoneId];
+		}
+		zoneCreate() {
+			let zoneId = this.zoneList.list.length;
+			let newZone = new Zone(zoneId);
+			this.zoneList.list.push( newZone );
+			return newZone;
 		}
 		rayHit(dir,rx,ry,rz,width,loft,slope) {
 			console.assert( Coordinate.validateMany(x,y) );
@@ -293,7 +341,7 @@ Module.add('dataWright',function() {
 			let distFound = Number.MAX_VALUE;
 			// TO DO : vary the distance by actual dist to edge of map.
 			let rake = new RakePath().set(dir,x,y,z,width,loft,slope,20);
-			rake.traverse( (x,y,z,i,loft,dist) => {
+			rake.traverse( (x,y,z,i,loft,dist,flags) => {
 				let block = this.map.getVal(x,y,z,'block');
 				if( !block.isUnknown ) {
 					distFound = dist-1;
@@ -310,39 +358,109 @@ Module.add('dataWright',function() {
 			this.map = map;
 			// set( x, y, z, facing, dist, width, loft, slope )
 			this.head.set( this.map.xMin+1, this.map.yHalf, this.map.zHalf, Dir.EAST, 0, 3, 5, 0 );
+			this.facingForbidden = Dir.reverse(this.head.facing);
 			this.pathControls = pathControls || new PathControls().setDefaults();
 			this.remaining    = pathLength;
 			return this;
 		}
+		findSafeTurn(facing) {
+			let left  = Dir.left(facing);
+			let right = Dir.right(facing);
+			let turn;
+			if( left == this.facingForbidden ) {
+				turn = 'right';
+			}
+			else
+			if( right == this.facingForbidden ) {
+				turn = 'left';
+			}
+			else {
+				turn = Rand.chance100(50) ? 'left' : 'right';
+			}
+			return turn;
+		}
 		steer() {
 			let p = this.pathControls;
+			let head = this.head;
+			head.last = (new Head()).copy(head);
 
 			let dist      = p.rgDist.roll();
 			let turn      = p.ctTurn.test();
 			let slopeMult = p.ctRise.test() ? 1 : p.ctFall.test() ? -1 : 0;
-			let slope     = slopeMult==0 ? 0 : p.rgSlope.roll() * slopeMult;
+			let slope     = p.rgSlope.roll() * slopeMult;
 			let slopeDist = slopeMult==0 ? 0 : p.rgSlopeDist.roll();
-			let width     = p.ctWiden.test() || this.head.width<=0 ? p.rgWidth.roll() : this.head.width;
+			let width;
+			if( !turn ) {
+				width = Math.max(p.rgWidth.min,head.width);
+			}
+			else {
+				width = p.ctWiden.test() || head.width<p.rgWidth.min ? p.rgWidth.roll() : head.width;
+				dist = Math.max(width+1,dist);
+			}
+			turn = !turn ? turn : this.findSafeTurn(head.facing);
 
-			this.head.dist   = dist;
-			this.head.turn   = turn;
-			this.head.width  = Math.max( 1, Math.min( Math.floor(this.head.dist/2), width ) );
-			this.head.facing = Dir.EAST;
+			let wallToggle = !this.zone ? true : !this.zone.wallToggle;
+			let zone = this.zoneCreate();
+			zone.wallToggle = wallToggle;
+			head.zoneId = zone.zoneId;
 
-			console.log( "Steer dist="+this.head.dist+" width="+this.head.width );
+			head.total  = dist;
+			head.dist   = dist;
+			head.turn   = turn;
+			head.width  = width;
+			head.slope  = slope;
+			// Note that head.facing does not change yet.
+
+			console.log( "Steer dist="+head.dist+" width="+head.width );
 		}
 		advancePath() {
-
-			// set(x,y,z,dir,width,loft,slope)
 			let h = this.head;
-			let rake = new Rake().set( h.facing, h.x, h.y, h.z, h.width, h.loft );
-			rake.traverse( (x,y,z,i,loft) => {
-				let block = loft==0 ? this.map.block.FLOOR : this.map.block.AIR;
-				this.map.setVal(x,y,z,block);
+			let sheath = 1;
+			let capNear = 1;
+			let capFar  = 0;
+			let BLOCK = this.map.block;
+			let turn = h.turn;
+			let flagTURN  = FLAG.ROOF | (turn=='left'  ? 0 : FLAG.LEFT) | (turn=='right' ? 0 : FLAG.RIGHT) | FLAG.START;
+			let noSlope   = 0;
+			let cornerDist = h.width;
+			let entryDist  = !h.last ? 0 : h.last.width;
+
+
+			console.log("head root = "+h.x+','+h.y);
+			// This actually changes the facing.
+			if( turn ) {
+				console.log("turning");
+				let cornerHalf = Math.floor(cornerDist/2);
+				h.move(h.facing,noSlope,cornerHalf);
+				h.facing = Dir[turn](h.facing);
+				let entryHalf = Math.floor(entryDist/2);
+				h.move(Dir.reverse(h.facing),noSlope,entryHalf);
+			}
+
+			// this keeps things flat until we've made the corner section.
+			let slopeFn = dist => turn && dist<=cornerDist ? 0 : h.slope;
+			// set(dir,x,y,z,width,loft,dist,slope,sheath,cap)
+			let rake = new RakePath().set( h.facing, h.x, h.y, h.z, h.width, h.loft, h.dist, slopeFn, sheath, capNear, capFar );
+
+			console.log( 'head='+h.x+','+h.y );
+			rake.traverse( (x,y,z,i,loft,dist,flags) => {
+				let inTurn = (turn && dist < entryDist);
+				let wallFlags = inTurn ? flagTURN : (FLAG.LEFT|FLAG.RIGHT|FLAG.ROOF);
+				let block = (flags & FLAG.FLOOR) ? BLOCK.FLOOR : (flags & wallFlags) ? BLOCK.WALL : BLOCK.AIR;
+				if( x==h.x && y==h.y ) {
+					block = BLOCK.FLUID;
+				}
+				console.assert(this.zone.zoneId>=0);
+				let curBlock = this.map.getBlock(x,y,z);
+				if( curBlock.isUnknown ) {
+					this.map.setVal(x,y,z,block,this.zone.zoneId);
+					console.assert( this.map.spot[x][y][z].zoneId == this.zone.zoneId );
+				}
 			});
 
-			this.head.advance(1);
-			this.head.dist -= 1;
+			this.head.advance(this.head.dist);
+			this.head.z = rake.zFinal;
+			this.head.dist = 0;
 		}
 
 		buildPath() {
@@ -356,6 +474,7 @@ Module.add('dataWright',function() {
 
 			this.advancePath();
 			this.remaining -= 1;
+			console.log(this.remaining);
 		}
 
 		advance() {
@@ -496,12 +615,12 @@ Module.add('dataWright',function() {
 	class Wright {
 		constructor() {
 		}
-		init(xLen,yLen,zLen) {
+		init(xLen,yLen,zLen,pathLength) {
 			this.map = new Map3d(Block);
 			this.map.set(0,0,0,xLen,yLen,zLen);
 
 			this.driver = new Driver.StraightLine();
-			this.driver.init(this.map,10,null);
+			this.driver.init(this.map,pathLength,null);
 			return this;
 		}
 		tick() {

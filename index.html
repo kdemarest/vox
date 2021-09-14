@@ -92,6 +92,9 @@ Module.add( 'playerControls', ()=> {
 					this.pointerLock();
 				}
 			}
+			this.keyDef['r'] = this.keyDef['R'] =	(target,value) => { target.up = value; }
+			this.keyDef['f'] = this.keyDef['F'] =	(target,value) => { target.up = -value; }
+
 			this.keyDef['w'] = this.keyDef['W'] =	(target,value) => { target.forward = value; }
 			this.keyDef['s'] = this.keyDef['S'] =	(target,value) => { target.forward = -value; }
 			this.keyDef['a'] = this.keyDef['A'] =	(target,value) => { target.sideways = value; }
@@ -250,13 +253,14 @@ async function main(){
 //	world.createFlatWorld( 16 );
 //	mapMaker.makeIntoWorld(world);
 
-	let wright = new Wright().init( 8*8, 8*8, 8*3 );
+	let wright = new Wright().init( 8*8, 8*8, 16*8, pathLength=7*8 );
 
 
 	world.init(wright.map.xLen,wright.map.yLen,wright.map.zLen);
-	world.createFlatWorld( 10 );	// dirt below, air above.
+	world.createFlatWorld( 30 );	// dirt below, air above.
 	brainlessLight(world);
-
+	let head = wright.driver.head;
+	world.spawnPoint = new Vector(head.x, head.y, head.z+1);
 	
 	// Set up renderer
 	var render = new Renderer( window.openGl );
@@ -267,7 +271,7 @@ async function main(){
 	let player = new Player();
 	player.body.setWorld( world );
 	player.viewMaterial.setMaterialSelector( "materialSelector" );
-	player.body.collide = false;
+	//player.body.collide = false;
 
 	let canvas = document.getElementById('renderSurface');
 	let controls = new PlayerControls(canvas,player.body);
@@ -277,7 +281,13 @@ async function main(){
 		map.traverse( (x,y,z) => {
 			let b = BLOCK[map.getBlock(x,y,z).toBLOCK];
 			console.assert(b);
-			world.setBlock(x,y,z,b);
+			let zoneId = map.getZoneId(x,y,z);
+			if( b==BLOCK.DIRT && (zoneId%2)==1 ) { // !== -1 && wright.driver.getZone(zoneId).wallToggle ) {
+				b = BLOCK.BRICK;
+			}
+			if( world.contains(x,y,z) ) {
+				world.setBlock(x,y,z,b);
+			}
 		});
 		world.bulkChangeEnd();
 	}

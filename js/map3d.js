@@ -41,7 +41,7 @@ Module.add('map3d',function(extern) {
 
 	let Coordinate = new class {
 		validateValue(n) {
-			return Number.isInteger(n);
+			return Number.isFinite(n);
 		}
 		validateMany(...args) {
 			let ok = true;
@@ -119,6 +119,9 @@ Module.add('map3d',function(extern) {
 			console.assert( Coordinate.validateValue(this.xLen) );
 			console.assert( Coordinate.validateValue(this.yLen) );
 			console.assert( Coordinate.validateValue(this.zLen) );
+		}
+		contains(x,y,z) {
+			return x>=this.xMin && x<=this.xMax && y>=this.yMin && y<=this.yMax && z>=this.zMin && z<=this.zMax;
 		}
 		extend(x,y,z) {
 			x = Math.floor(x);

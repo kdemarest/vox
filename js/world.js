@@ -1,12 +1,13 @@
 Module.add('world',function(){
 
-class World {
+class World extends Rect3d {
 	World() {
 	}
+	get sx() { return this.xLen; }
+	get sy() { return this.yLen; }
+	get sz() { return this.zLen; }
 	init( sx, sy, sz ) {
-		this.sx = sx;
-		this.sy = sy;
-		this.sz = sz;
+		this.set(0,0,0,sx,sy,sz);
 
 		function array3(sx,sy,sz,initFn) {
 			let a = new Array( sx );
