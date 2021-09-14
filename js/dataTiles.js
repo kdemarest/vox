@@ -45,43 +45,52 @@ let CaveWallImgChooseFn = self => {
 }
 
 Type.register('TileType',{
-	"floorCave":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
-					img: "terrain/floorSlate.png",
-					isFloor: true },
-	"floorDirt":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
-					img: "terrain/floorDirt.png",
-					isFloor: true },
-	"floorSlate":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
-					img: "terrain/floorSlate.png",
-					isFloor: true },
-	"floorStone":  { mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
-					img: "dc-dngn/floor/rect_gray1.png", isFloor: true
-					},
-	"wallCave":   { mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
-					addFloor: true,
-					imgChoices: {
-						0: { img: "terrain/boulder1.png" },
-						1: { img: "terrain/boulder2.png" },
-						2: { img: "terrain/boulder3.png" },
-						3: { img: "terrain/boulder4.png" },
-					},
-					imgChooseFn: CaveWallImgChooseFn,
-					isWall: true
-				},
-	"wallJagged":   { mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
-					addFloor: true,
-					imgChoices: {
-						0: { img: "terrain/jagged1.png" },
-						1: { img: "terrain/jagged2.png" },
-						2: { img: "terrain/jagged3.png" },
-						3: { img: "terrain/jagged4.png" },
-					},
-					imgChooseFn: CaveWallImgChooseFn,
-					isWall: true,
-					scale: 0.7 },
-	"wallStone":   { mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
-					img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true
-					},
+	"floorCave":  {
+		mayWalk: true,  mayFly: true,  opacity: 0, name: "cave floor",
+		img: "terrain/floorSlate.png",
+		isFloor: true },
+	"floorDirt":  {
+		mayWalk: true,  mayFly: true,  opacity: 0, name: "dirt floor",
+		img: "terrain/floorDirt.png",
+		isFloor: true },
+	"floorSlate":  {
+		mayWalk: true,  mayFly: true,  opacity: 0, name: "slate floor",
+		img: "terrain/floorSlate.png",
+		isFloor: true },
+	"floorStone":  {
+		mayWalk: true,  mayFly: true,  opacity: 0, name: "stone floor",
+		img: "dc-dngn/floor/rect_gray1.png", isFloor: true
+	},
+	"wallCave":   {
+		mayWalk: false, mayFly: false, opacity: 1, name: "cave wall", 
+		addFloor: true,
+		imgChoices: {
+			0: { img: "terrain/boulder1.png" },
+			1: { img: "terrain/boulder2.png" },
+			2: { img: "terrain/boulder3.png" },
+			3: { img: "terrain/boulder4.png" },
+		},
+		imgChooseFn: CaveWallImgChooseFn,
+		isWall: true,
+
+	},
+	"wallJagged":   {
+		mayWalk: false, mayFly: false, opacity: 1, name: "jagged wall", 
+		addFloor: true,
+		imgChoices: {
+			0: { img: "terrain/jagged1.png" },
+			1: { img: "terrain/jagged2.png" },
+			2: { img: "terrain/jagged3.png" },
+			3: { img: "terrain/jagged4.png" },
+		},
+		imgChooseFn: CaveWallImgChooseFn,
+		isWall: true,
+		scale: 0.7,
+	},
+	"wallStone":   {
+		mayWalk: false, mayFly: false, opacity: 1, name: "tile stone wall",
+		img: "dc-dngn/floor/pedestal_full.png", isWall: true, wantsDoor: true,
+	},
 	"pit": {
 		symbol: ':',
 		mayWalk: true,
@@ -94,7 +103,7 @@ Type.register('TileType',{
 		// NOTE! Technically the pit isRemovable when you build bridges with a hammer. But
 		// that is for another day.
 		wantsBridge: true,
-		img: "terrain/pit.png"
+		img: "terrain/pit.png",
 	},
 	"bridge": {
 		mayWalk: true,
@@ -107,7 +116,7 @@ Type.register('TileType',{
 		// flag only means "can be removed in such a way as to be walked upon later.
 		img: "dc-dngn/bridgeNS.png",
 		imgChoices: ImgBridges,
-		imgChooseFn: self => self.img	// the image will be custom altered among the choices
+		imgChooseFn: self => self.img,	// the image will be custom altered among the choices
 	},
 	"water": {
 		symbol: '~',
@@ -143,6 +152,7 @@ Type.register('TileType',{
 		mayFly: true,
 		opacity: 0,
 		noScent: true,
+		isShaft: true,
 		name: "shaft",
 		mayJump: true,
 		addFloor: true,

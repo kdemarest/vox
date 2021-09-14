@@ -369,6 +369,14 @@ Module.add('renderer',function(){
 
 		buildChunks( count )
 		{
+			if( this.world.blockChangedFlag ) {
+				for ( var i = 0; i < this.chunks.length; i++ ) {
+					this.chunks[i].dirty = true;
+				}
+				brainlessLight(this.world);
+				this.world.blockChangedFlag = false;
+			}
+
 			var gl = this.gl;
 			var chunks = this.chunks;
 			var world = this.world;

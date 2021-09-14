@@ -34,6 +34,8 @@
 <script src="js/dataChecker.js" charset="utf-8"></script>
 <script src="js/dataPicker.js" charset="utf-8"></script>
 <script src="js/dataMason.js" charset="utf-8"></script>
+<script src="js/map3d.js" charset="utf-8"></script>
+<script src="js/dataWright.js" charset="utf-8"></script>
 <script src="js/path.js" charset="utf-8"></script>
 <script src="js/place.js" charset="utf-8"></script>
 
@@ -239,16 +241,20 @@ async function main(){
 	await game.initTypes( ()=>nullChecker );
 	await game.initImages( onImageComplete, 250 );
 
-	let mapString = mapGenerate();
 
-
-	let mapMaker = new MapMaker(mapString);
 	let world = new World();
-	world.init(mapMaker.map.xLen,mapMaker.map.yLen,16);
 
-	world.createFlatWorld( 16 );
+//	let mapString = mapGenerate();
+//	let mapMaker = new MapMaker(mapString);
+//	world.init(mapMaker.map.xLen,mapMaker.map.yLen,16);
+//	world.createFlatWorld( 16 );
+//	mapMaker.makeIntoWorld(world);
 
-	mapMaker.makeIntoWorld(world);
+	let wright = new Wright().init( 8*8, 8*8, 8*3 );
+
+
+	world.init(wright.map.xLen,wright.map.yLen,wright.map.zLen);
+	world.createFlatWorld( 10 );	// dirt below, air above.
 	brainlessLight(world);
 
 	
@@ -261,12 +267,20 @@ async function main(){
 	let player = new Player();
 	player.body.setWorld( world );
 	player.viewMaterial.setMaterialSelector( "materialSelector" );
-
-	// debug only
-	BLOCK._player = player;
+	player.body.collide = false;
 
 	let canvas = document.getElementById('renderSurface');
 	let controls = new PlayerControls(canvas,player.body);
+
+	wright._renderFn = map => {
+		world.bulkChangeBegin();
+		map.traverse( (x,y,z) => {
+			let b = BLOCK[map.getBlock(x,y,z).toBLOCK];
+			console.assert(b);
+			world.setBlock(x,y,z,b);
+		});
+		world.bulkChangeEnd();
+	}
 
 
 	window.tickCall = function() {
@@ -282,6 +296,8 @@ async function main(){
 		// Draw world
 		render.setCamera( player.body.getEyePos().toArray(), player.body.angles );
 		render.draw();
+
+		wright.tick();
 	}
 
 	window.tick = function() {

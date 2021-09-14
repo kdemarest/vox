@@ -34,7 +34,7 @@ class World {
 		return this;
 	}
 	createFlatWorld( height ) {
-		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, Math.floor(height/2) );
+		this.spawnPoint = new Vector( this.sx / 2 + 0.5, this.sy / 2 + 0.5, height+2 );
 		
 		for ( var x = 0; x < this.sx; x++ )
 			for ( var y = 0; y < this.sy; y++ )
@@ -47,10 +47,17 @@ class World {
 		if ( x < 0 || y < 0 || z < 0 || x > this.sx - 1 || y > this.sy - 1 || z > this.sz - 1 ) return BLOCK.AIR;
 		return this.blocks[x][y][z];
 	}
+	bulkChangeBegin() {
+		this.blockChangedFlag = true;
+	}
+	bulkChangeEnd() {
+	}
 	setBlock( x, y, z, type )
 	{
 		this.blocks[x][y][z] = type;
-		if ( this.renderer != null ) this.renderer.onBlockChanged( x, y, z );
+		if( this.renderer && !this.blockChangedFlag ) {
+			this.renderer.onBlockChanged(x,y,z);
+		}
 	}
 
 }

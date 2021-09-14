@@ -110,13 +110,14 @@ BLOCK.COBBLESTONE = {
 	textureStem: 'block/cobblestone.png',
 };
 
-// Concrete
-BLOCK.CONCRETE = {
+// Stone
+BLOCK.STONE = {
 	id: 9,
 	spawnable: true,
 	transparent: false,
 	selflit: false,
 	gravity: false,
+	textureStem: 'block/stone.png',
 };
 
 // Brick
@@ -274,7 +275,7 @@ let LIGHT = new class {
 			}
 
 			return a;
-		}(0.03,1.0,this.max);
+		}(0.2/*0.03*/,1.0,this.max);
 	}
 }
 

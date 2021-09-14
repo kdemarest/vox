@@ -153,7 +153,12 @@ Module.add('body',function(){
 				}
 
 				// Resolve collision
-				this.pos = this.resolveCollision( pos, velocity.mul( delta ) );
+				if( this.collide !== false ) {
+					this.pos = this.resolveCollision( pos, velocity.mul( delta ) );
+				}
+				else {
+					this.pos = pos.add(velocity.mul( delta ));
+				}
 			}
 
 			this.lastUpdate = new Date().getTime();

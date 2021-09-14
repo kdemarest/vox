@@ -1033,7 +1033,6 @@ StuffVarietyList.acidSlime.onTouch 	= TouchDamage.onTouchWalk;
 StuffVarietyList.poisonSlime.isProblem = TouchDamage.isProblem;
 StuffVarietyList.poisonSlime.onTouch 	= TouchDamage.onTouchWalk;
 
-
 const RingMaterialList = ({ //Type.establish('RingMaterial',{},{
 	"brass": 	{ power: 0, img: 'item/ring/brass.png' },
 	"copper": 	{ power: 1, img: 'item/ring/bronze.png' },
