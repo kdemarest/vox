@@ -77,8 +77,8 @@ Module.add('map3d',function(extern) {
 			x = Math.floor(x);
 			y = Math.floor(y);
 			this.validate();
-			if( x < this.x ) this.x = x;
-			if( y < this.y ) this.y = y;
+			if( x < this.x ) { this.xLen += this.x-x; this.x = x; }
+			if( y < this.y ) { this.yLen += this.y-y; this.y = y; }
 			if( x >= this.x + this.xLen ) this.xLen = x - this.x + 1;
 			if( y >= this.y + this.yLen ) this.yLen = y - this.y + 1;
 		}
@@ -128,12 +128,27 @@ Module.add('map3d',function(extern) {
 			y = Math.floor(y);
 			z = Math.floor(z);
 			this.validate();
-			if( x < this.x ) this.x = x;
-			if( y < this.y ) this.y = y;
-			if( z < this.z ) this.z = z;
-			if( x >= this.x + this.xLen ) this.xLen = x - this.x + 1;
-			if( y >= this.y + this.yLen ) this.yLen = y - this.y + 1;
-			if( z >= this.z + this.zLen ) this.zLen = z - this.z + 1;
+			if( x < this.x ) {
+				this.xLen += this.x-x;
+				this.x = x;
+			}
+			if( y < this.y ) {
+				this.yLen += this.y-y;
+				this.y = y;
+			}
+			if( z < this.z ) {
+				this.zLen += this.z-z;
+				this.z = z;
+			}
+			if( x >= this.x + this.xLen ) {
+				this.xLen = x - this.x + 1;
+			}
+			if( y >= this.y + this.yLen ) {
+				this.yLen = y - this.y + 1;
+			}
+			if( z >= this.z + this.zLen ) {
+				this.zLen = z - this.z + 1;
+			}
 		}
 		traverse2d(fn) {
 			let count = 0;

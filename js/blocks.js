@@ -62,7 +62,7 @@ BLOCK.TORCH = {
 	spawnable: true,
 	transparent: false,
 	selflit: true,
-	light: { mag: 8, r:1.0, g:1.0, b:1.0 },
+	light: { mag: 6, r:1.0, g:1.0, b:1.0 },
 	gravity: false,
 	textureStem: 'block/torch.png',
 };
@@ -260,25 +260,6 @@ BLOCK.fromId = function( id )
 	return null;
 }
 
-let LIGHT = new class {
-	constructor() {
-		this.max = 10;
-
-		this.mag = function(min,max,lightMax) {
-			let a = [];
-			for( let i=0 ; i<=lightMax ; ++i ) { 
-				let x = lightMax - i;
-				let n1 = Math.exp(-x/(lightMax/3));	// technically should divide by 5
-				let n2 = i/lightMax;
-				let n = (n1+n2)/2.0;
-				a[i] = min+(n*(max-min));
-			}
-
-			return a;
-		}(0.2/*0.03*/,1.0,this.max);
-	}
-}
-
 BLOCK.getTx = function(block,world,x,y,z,dir) {
 	if( block.textureStem ) {
 		window.textureRepo.getResourceByImg(block.textureStem);
@@ -298,7 +279,7 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 	var lightMap  = world.lightMap;
 	var block  = blocks[x][y][z];
 	var bH = block.fluid && ( z == world.sz - 1 || !blocks[x][y][z+1].fluid ) ? 0.8 : 1.0;
-	let lightMax = LIGHT.max;
+	let lightMax = 1.0;
 	let lightFull = [lightMax,lightMax,lightMax];
 
 	let trans = block.trans;
@@ -310,9 +291,9 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.UP );
 
 		let m = block.selflit || z>=world.sz-1 ? lightFull : lightMap[x][y][z+1];
-		let r = LIGHT.mag[ m[0] ];
-		let g = LIGHT.mag[ m[1] ];
-		let b = LIGHT.mag[ m[2] ];
+		let r = m[0];
+		let g = m[1];
+		let b = m[2];
 
 		//let lightNum = z>=world.sz-1 ? 0 : lightMap[x][y][z+1];
 		//var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
@@ -332,9 +313,9 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.DOWN );
 		
 		let m = block.selflit || z<=0 ? lightFull : lightMap[x][y][z-1];
-		let r = LIGHT.mag[ m[0] ];
-		let g = LIGHT.mag[ m[1] ];
-		let b = LIGHT.mag[ m[2] ];
+		let r = m[0];
+		let g = m[1];
+		let b = m[2];
 		
 		pushQuad(
 			block.trans ? vTrans : vSolid,
@@ -351,9 +332,9 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.FORWARD );
 		
 		let m = block.selflit || y<=0 ? lightFull : lightMap[x][y-1][z];
-		let r = LIGHT.mag[ m[0] ];
-		let g = LIGHT.mag[ m[1] ];
-		let b = LIGHT.mag[ m[2] ];
+		let r = m[0];
+		let g = m[1];
+		let b = m[2];
 		
 		pushQuad(
 			block.trans ? vTrans : vSolid,
@@ -370,9 +351,9 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.BACK );
 		
 		let m = block.selflit || y>=world.sy-1 ? lightFull : lightMap[x][y+1][z];
-		let r = LIGHT.mag[ m[0] ];
-		let g = LIGHT.mag[ m[1] ];
-		let b = LIGHT.mag[ m[2] ];
+		let r = m[0];
+		let g = m[1];
+		let b = m[2];
 		
 		pushQuad(
 			block.trans ? vTrans : vSolid,
@@ -389,9 +370,9 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.LEFT );
 		
 		let m = block.selflit || x<=0 ? lightFull : lightMap[x-1][y][z];
-		let r = LIGHT.mag[ m[0] ];
-		let g = LIGHT.mag[ m[1] ];
-		let b = LIGHT.mag[ m[2] ];
+		let r = m[0];
+		let g = m[1];
+		let b = m[2];
 		
 		pushQuad(
 			block.trans ? vTrans : vSolid,
@@ -408,9 +389,9 @@ BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
 		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.RIGHT );
 		
 		let m = block.selflit || x>=world.sx-1 ? lightFull : lightMap[x+1][y][z];
-		let r = LIGHT.mag[ m[0] ];
-		let g = LIGHT.mag[ m[1] ];
-		let b = LIGHT.mag[ m[2] ];
+		let r = m[0];
+		let g = m[1];
+		let b = m[2];
 		
 		pushQuad(
 			block.trans ? vTrans : vSolid,

@@ -4,45 +4,46 @@ Module.add('dataWright',function() {
 
 	let Block = {
 		UNKNOWN: {
-			symbol: '?',
 			isUnknown: true,
 			toBLOCK: 'AIR',
 		},
 		AIR: {
-			symbol: ' ',
 			isAir: true,
 			toBLOCK: 'AIR',
 		},
 		FLOOR: {
-			symbol: '.',
 			isFloor: true,
 			toBLOCK: 'PLANK',
 		},
 		WALL: {
-			symbol: '#',
 			isWall: true,
 			toBLOCK: 'DIRT',
 		},
 		STAIR: {
-			symbol: '=',
 			isStair: true,
 			toBLOCK: 'PLANK',
 		},
 		DOOR: {
-			symbol: '+',
 			isDoor: true,
 			toBLOCK: 'GOLD',
 		},
 		WINDOW: {
-			symbol: '^',
 			isWindow: true,
 			toBLOCK: 'WINDOW',
 		},
 		FLUID: {
-			symbol: '~',
 			isFluid: true,
 			toBLOCK: 'WATER',
 		},
+		MARKER: {
+			isMarker: true,
+			toBLOCK: 'IRON',
+		},
+		LIGHT: {
+			isLight: true,
+			toBLOCK: 'TORCH',
+		}
+
 	}
 
 	class Node {
@@ -161,14 +162,13 @@ Module.add('dataWright',function() {
 	}
 
 	let FLAG = {
-		LEFT: 1,
-		RIGHT: 2,
-		FLOOR: 4,
-		ROOF: 8,
-		START: 16,
-		END: 32
-	}
-
+		LWALL:	1,
+		RWALL:	2,
+		FLOOR:	4,
+		ROOF:	8,
+		START:	16,
+		END:	32
+	};
 
 	class ChanceTo {
 		constructor(chance100) {
@@ -204,6 +204,17 @@ Module.add('dataWright',function() {
 		}
 	}
 
+	class Often {
+		constructor(chance100,value,otherRoller) {
+			this.chance100 = chance100;
+			this.value = value;
+			this.otherRoller = otherRoller;
+		}
+		roll() {
+			return Rand.chance100(this.chance100) ? this.value : this.otherRoller.roll();
+		}
+	}
+
 	class PathControls {
 		constructor() {
 			this.setDefaults();
@@ -211,13 +222,13 @@ Module.add('dataWright',function() {
 		setDefaults() {
 			this.rgDist      = new Range(2,20,'intBell');
 			this.ctTurn      = new ChanceTo(50);
-			this.ctRise      = new ChanceTo(50);
-			this.ctFall      = new ChanceTo(100);
-			this.rgSlope     = new Range(0.5,0.5,'floatRange');
-			this.rgSlopeDist = new Range(5,5,'intRange');
+			this.ctRise      = new ChanceTo(30);
+			this.ctFall      = new ChanceTo(30);
+			this.rgSlope     = new Often(50,1,new Range(1/4,1,'floatRange'));
 			this.ctWiden     = new ChanceTo(100);
 			this.rgWidth     = new Range(0,3,'intRange',1,2);
 			this.roofMin     = 5;
+			this.lightSpacing = 20;
 			return this;
 		}
 		set(parameters) {
@@ -254,13 +265,14 @@ Module.add('dataWright',function() {
 			let hw = Math.floor(this.width/2);
 			let x = this.x + ahead.x*dist - right.x*(hw+this.sheath);
 			let y = this.y + ahead.y*dist - right.y*(hw+this.sheath);
+			let flagSE = (dist<0 ? FLAG.START : 0) | (dist>distTotal ? FLAG.END : 0);
 
 			for( let i=-(hw+this.sheath) ; i<=hw+this.sheath ; ++i ) {
-				let flagLR;
-				flagLR |= (i<-hw ? FLAG.LEFT : 0) | (i>hw ? FLAG.RIGHT : 0);
-				flagLR |= (dist<0 ? FLAG.START : 0) | (dist>distTotal ? FLAG.END : 0);
+				let flagLR = flagSE;
+				flagLR |= (i<-hw ? FLAG.LWALL : 0) | (i>hw ? FLAG.RWALL : 0 );
 				for( let loft = -this.sheath ; loft<this.loft+this.sheath ; ++loft ) {
-					let flags = flagLR | (loft<0 ? FLAG.FLOOR : 0) | (loft>=this.loft ? FLAG.ROOF : 0);
+					let flags = flagLR;
+					flags |= (loft<0 ? FLAG.FLOOR : 0) | (loft>this.loft-1 ? FLAG.ROOF : 0);
 					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),i,loft,dist,flags);
 					if( ok === false ) {
 						return false;
@@ -280,8 +292,8 @@ Module.add('dataWright',function() {
 			super.set(dir,x,y,z,width,loft,sheath);
 			console.assert( Number.isInteger(dist) && dist >= 0 );
 			console.assert( typeof slope=='function' || (Number.isFinite(slope) && slope >= -9999 && slope <= 9999) );
-			this.dist  = dist;
-			this.slope = slope;
+			this.dist      = dist;
+			this.slope     = slope;
 			this.capNear = capNear;
 			this.capFar  = capFar;
 			this.zFinal = null;
@@ -382,13 +394,15 @@ Module.add('dataWright',function() {
 		steer() {
 			let p = this.pathControls;
 			let head = this.head;
+			let lastSlope = head.last ? head.last.slope : 0;
+			console.log('lastSlope='+lastSlope);
 			head.last = (new Head()).copy(head);
 
 			let dist      = p.rgDist.roll();
 			let turn      = p.ctTurn.test();
-			let slopeMult = p.ctRise.test() ? 1 : p.ctFall.test() ? -1 : 0;
+			let slopeMult = (p.ctRise.test() && lastSlope >=0) ? 1 : (p.ctFall.test() && lastSlope<=0) ? -1 : 0;
 			let slope     = p.rgSlope.roll() * slopeMult;
-			let slopeDist = slopeMult==0 ? 0 : p.rgSlopeDist.roll();
+
 			let width;
 			if( !turn ) {
 				width = Math.max(p.rgWidth.min,head.width);
@@ -418,9 +432,9 @@ Module.add('dataWright',function() {
 			let sheath = 1;
 			let capNear = 1;
 			let capFar  = 0;
-			let BLOCK = this.map.block;
+			let Block = this.map.block;
 			let turn = h.turn;
-			let flagTURN  = FLAG.ROOF | (turn=='left'  ? 0 : FLAG.LEFT) | (turn=='right' ? 0 : FLAG.RIGHT) | FLAG.START;
+			let flagTURN  = (turn=='left' ? 0 : FLAG.LWALL) | (turn=='right' ? 0 : FLAG.RWALL);
 			let noSlope   = 0;
 			let cornerDist = h.width;
 			let entryDist  = !h.last ? 0 : h.last.width;
@@ -445,11 +459,29 @@ Module.add('dataWright',function() {
 			console.log( 'head='+h.x+','+h.y );
 			rake.traverse( (x,y,z,i,loft,dist,flags) => {
 				let inTurn = (turn && dist < entryDist);
-				let wallFlags = inTurn ? flagTURN : (FLAG.LEFT|FLAG.RIGHT|FLAG.ROOF);
-				let block = (flags & FLAG.FLOOR) ? BLOCK.FLOOR : (flags & wallFlags) ? BLOCK.WALL : BLOCK.AIR;
-				if( x==h.x && y==h.y ) {
-					block = BLOCK.FLUID;
+				let block = Block.AIR;
+
+				if( flags & FLAG.FLOOR )		{ block = Block.FLOOR; }
+				if( flags & FLAG.ROOF)			{ block = Block.WALL; }
+				if( inTurn ) {
+					if( flags & FLAG.START )	{ block = Block.WALL; }
+					if( flags & flagTURN )		{ block = Block.WALL; }
 				}
+				else
+				if( flags & (FLAG.LWALL|FLAG.RWALL) ) { block = Block.WALL; }
+
+				//let ceilingMiddle = i==0 && loft==h.loft-1;
+				let ceilingMiddle = i==-Math.floor(h.width/2) && loft==2;
+				let spaced = (this.remaining-dist) % this.pathControls.lightSpacing == 0;
+				if( ceilingMiddle && spaced ) {
+					block = Block.LIGHT;
+				}
+
+				if( x==h.x && y==h.y && (flags & FLAG.FLOOR) ) {
+					block = Block.MARKER;
+				}
+
+				console.log(block);
 				console.assert(this.zone.zoneId>=0);
 				let curBlock = this.map.getBlock(x,y,z);
 				if( curBlock.isUnknown ) {
@@ -458,9 +490,13 @@ Module.add('dataWright',function() {
 				}
 			});
 
+			let distTraveled = this.head.dist;
 			this.head.advance(this.head.dist);
 			this.head.z = rake.zFinal;
 			this.head.dist = 0;
+
+			this.remaining -= distTraveled;
+			console.log(this.remaining);
 		}
 
 		buildPath() {
@@ -473,8 +509,6 @@ Module.add('dataWright',function() {
 			}
 
 			this.advancePath();
-			this.remaining -= 1;
-			console.log(this.remaining);
 		}
 
 		advance() {
@@ -625,9 +659,16 @@ Module.add('dataWright',function() {
 		}
 		tick() {
 			if( !this.driver.isDone ) {
-				this.driver.advance();
+				while( !this.driver.isDone ) {
+					this.driver.advance();
+				}
 				this._renderFn(this.map);
 			}
+
+//			if( !this.driver.isDone ) {
+//				this.driver.advance();
+//				this._renderFn(this.map);
+//			}
 		}
 	}
 

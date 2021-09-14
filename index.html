@@ -253,7 +253,7 @@ async function main(){
 //	world.createFlatWorld( 16 );
 //	mapMaker.makeIntoWorld(world);
 
-	let wright = new Wright().init( 8*8, 8*8, 16*8, pathLength=7*8 );
+	let wright = new Wright().init( 16*8, 16*8, 16*8, pathLength=16*8 );
 
 
 	world.init(wright.map.xLen,wright.map.yLen,wright.map.zLen);
@@ -278,6 +278,7 @@ async function main(){
 
 	wright._renderFn = map => {
 		world.bulkChangeBegin();
+		let count = 0;
 		map.traverse( (x,y,z) => {
 			let b = BLOCK[map.getBlock(x,y,z).toBLOCK];
 			console.assert(b);
@@ -287,6 +288,7 @@ async function main(){
 			}
 			if( world.contains(x,y,z) ) {
 				world.setBlock(x,y,z,b);
+				count += 1;
 			}
 		});
 		world.bulkChangeEnd();

@@ -195,6 +195,71 @@ Light.Caster = class {
 	}
 }
 
+let LIGHT = new class {
+	constructor() {
+
+		let calcLightRange = (min,max,lightMax) => {
+			let a = [];
+			let centerBrightness = 0.2+0.8*(lightMax / this.max);
+			for( let i=0 ; i<=lightMax ; ++i ) { 
+				// a scalar, from 1.0 at zero range, to near-zero at farthest distance.
+				let brightness = (lightMax - i)/lightMax;
+				let dist = i+1;
+
+				let n1 = Math.exp(-i/(lightMax/3));	// technically should divide by 5
+				//let n1 = 1/Math.sqrt(d);
+				//let n1 = 1 / ( 1 + (2*i) + i*i );
+				let n2 = brightness;
+				let n = (n1+n1)/2.0;
+				a[i] = min+(n*(max-min)*centerBrightness);
+			}
+
+			return a;
+		}
+
+		this.max = 15;
+		this.magScale = [];
+		for( let i=1 ; i<=this.max ; ++i ) {
+			this.magScale[i] = calcLightRange(0.06,1.0,i);
+		}
+	}
+}
+
+let lightCalc = ( lightPower, rx, ry, rz ) => {
+	let lightMax = 15;
+	let centerBrightness = 0.2+0.8*(lightPower / lightMax);
+	let distance = Math.sqrt(rx*rx+ry*ry+rz*rz);
+	let brightness = (lightPower-distance) / lightPower;
+	let n1 = Math.exp(-distance/(lightPower/3));
+	let n2 = brightness;
+	let n = (n1+n1)/2.0;
+	return n;
+}
+
+let lightMax = 15;
+let lightMagCache = [];
+function fillLightMagCache() {
+
+	for( let mag=1 ; mag<=lightMax ; ++mag ) {
+		lightMagCache[mag] = [];
+		for( let x=0 ; x<=mag ; ++x ) {
+			for( let y=0 ; y<=mag ; ++y ) {
+				for( let z=0 ; z<=mag ; ++z ) {
+					let index = Math.abs(z)*16*16+Math.abs(y)*16+Math.abs(x);
+					lightMagCache[mag][index] = lightCalc( mag, x, y, z );
+				}
+			}
+		}
+	}
+}
+
+fillLightMagCache();
+
+
+
+
+
+
 
 function brainlessLight(world) {
 	let blocks = world.blocks;
@@ -202,6 +267,10 @@ function brainlessLight(world) {
 
 	function cast(cx,cy,cz,light) {
 		let mag = light.mag;
+		console.assert( Number.isInteger(mag) && mag >=1 && mag <=LIGHT.max );
+		let magScale = LIGHT.magScale[mag];
+		console.assert(magScale);
+
 		let r = light.r;
 		let g = light.g;
 		let b = light.b;
@@ -218,15 +287,18 @@ function brainlessLight(world) {
 					if( cz+z<0 || cz+z>=world.sz ) {
 						continue;
 					}
-					let mx = 1+mag-Math.abs(x);
-					let my = 1+mag-Math.abs(y);
-					let mz = 1+mag-Math.abs(z);
-					
-					let m = Math.min(mx, my, mz);
+//					let mMax = Math.max( Math.abs(x), Math.abs(y), Math.abs(z) );
+//					
+//					console.assert( mMax >=0 && mMax <=15 );
+//					let m = magScale[ mMax ];
+
+					let index = Math.abs(z)*16*16+Math.abs(y)*16+Math.abs(x);
+					let m = lightMagCache[mag][index];
+					console.assert(Number.isFinite(m));
 					let a = lightMap[cx+x][cy+y][cz+z];
-					a[0] = Math.floor( Math.max( a[0], m*r ) );
-					a[1] = Math.floor( Math.max( a[1], m*g ) );
-					a[2] = Math.floor( Math.max( a[2], m*b ) );
+					a[0] = Math.max( a[0], m*r );
+					a[1] = Math.max( a[1], m*g );
+					a[2] = Math.max( a[2], m*b );
 				}
 			}
 		}
