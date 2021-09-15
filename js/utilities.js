@@ -79,6 +79,25 @@ Module.add('utilities',function(extern){
 
 	Random.Pseudo = new Random.PseudoGenerator();
 
+	let Coordinate = new class {
+		validateValue(n) {
+			return Number.isFinite(n);
+		}
+		validateMany(...args) {
+			let ok = true;
+			for( let i=0 ; i<args.length ; ++i ) {
+				ok = ok && this.validateValue(args[i]);
+			}
+			return ok;
+		}
+		validateRange(a,b) {
+			return
+				this.validateValue(a) &&
+				this.validateValue(b) &&
+				a<=b;
+		}
+	}();
+
 
 	Math.clamp = function(value,min,max) {
 		return Math.max(min,Math.min(max,value));
@@ -590,7 +609,8 @@ ARRAY FORM
 	})();
 
 	return {
-		Random: Random
+		Random: Random,
+		Coordinate: Coordinate,
 	}
 
 });

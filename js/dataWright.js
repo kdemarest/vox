@@ -490,7 +490,7 @@ Module.add('dataWright',function() {
 				}
 			});
 
-			let distTraveled = this.head.dist;
+			let distTraveled = this.head.dist+1;
 			this.head.advance(this.head.dist);
 			this.head.z = rake.zFinal;
 			this.head.dist = 0;
