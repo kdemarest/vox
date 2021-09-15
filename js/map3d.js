@@ -6,6 +6,15 @@ Module.add('map3d',function(extern) {
 	let ZoneChar = ' 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 	let NO_ZONE = -1;
 
+	class Point3d {
+		set(x,y,z) {
+			Coordinate.validateMany(x,y,z);
+			this.x = x;
+			this.y = y;
+			this.z = z;	
+		}
+	}
+
 	class Rect3d {
 		set(x,y,z,xLen,yLen,zLen) {
 			Coordinate.validateMany(x,y,z,xLen,yLen,zLen);
