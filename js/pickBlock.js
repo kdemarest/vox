@@ -128,8 +128,8 @@ class PickBlock {
 		for ( var x = min.x; x <= max.x; x++ ) {
 			for ( var y = min.y; y <= max.y; y++ ) {
 				for ( var z = min.z; z <= max.z; z++ ) {
-					if ( world.getBlock( x, y, z ) != BLOCK.AIR )
-						BLOCK.pushPickingVertices( vertices, x, y, z );
+					if ( world.getBlock( x, y, z ) != BlockType.AIR )
+						world.pushPickingVertices( vertices, x, y, z );
 				}
 			}
 		}

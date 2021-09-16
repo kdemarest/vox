@@ -81,9 +81,8 @@ class TextureRepo {
 		});
 	}
 
-	getResourceByImg(img) {
-		let isString = typeof img === 'string';
-		let imgStem = isString ? img : img.src;
+	getResourceByImg(imgStem) {
+		console.assert( typeof imgStem === 'string' );
 		let imgPath = window.IMG_BASE+imgStem;
 		let state = this.imgStateList[imgPath];
 		if( state === undefined ) {

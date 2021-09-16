@@ -16,10 +16,10 @@ DIRECTION.RIGHT = 4;
 DIRECTION.FORWARD = 5;
 DIRECTION.BACK = 6;
 
-BLOCK = {};
+let BlockData = {};
 
 // Air
-BLOCK.AIR = {
+BlockData.AIR = {
 	id: 0,
 	spawnable: false,
 	transparent: true,
@@ -29,7 +29,7 @@ BLOCK.AIR = {
 };
 
 // Bedrock
-BLOCK.BEDROCK = {
+BlockData.BEDROCK = {
 	id: 1,
 	spawnable: false,
 	transparent: false,
@@ -37,7 +37,7 @@ BLOCK.BEDROCK = {
 };
 
 // Dirt
-BLOCK.DIRT = {
+BlockData.DIRT = {
 	id: 2,
 	spawnable: true,
 	transparent: false,
@@ -47,7 +47,7 @@ BLOCK.DIRT = {
 };
 
 // Wood
-BLOCK.WOOD = {
+BlockData.WOOD = {
 	id: 3,
 	spawnable: true,
 	transparent: false,
@@ -57,18 +57,29 @@ BLOCK.WOOD = {
 };
 
 // TORCH
-BLOCK.TORCH = {
+BlockData.TORCH = {
 	id: 4,
 	spawnable: true,
 	transparent: true,
 	selflit: true,
 	light: { mag: 6, r:1.0, g:1.0, b:1.0 },
 	gravity: false,
+	indent: { top: 2/16, bot: 2/16, fro: 6/16, bac: 6/16, lef: 6/16, rig: 6/16 },
 	textureStem: 'block/torch.png',
+/*
+	textureCube: {
+		top:'block/torch.png',
+		bot:'block/torch.png',
+		fro:'block/torch.png',
+		bac:'block/torch.png',
+		lef:'block/torch.png',
+		rig:'block/torch.png'
+	}
+*/
 };
 
 // Bookcase
-BLOCK.BOOKCASE = {
+BlockData.BOOKCASE = {
 	id: 5,
 	spawnable: true,
 	transparent: false,
@@ -79,7 +90,7 @@ BLOCK.BOOKCASE = {
 };
 
 // Lava
-BLOCK.LAVA = {
+BlockData.LAVA = {
 	id: 6,
 	spawnable: false,
 	transparent: true,
@@ -91,7 +102,7 @@ BLOCK.LAVA = {
 };
 
 // Plank
-BLOCK.PLANK = {
+BlockData.PLANK = {
 	id: 7,
 	spawnable: true,
 	transparent: false,
@@ -101,7 +112,7 @@ BLOCK.PLANK = {
 };
 
 // Cobblestone
-BLOCK.COBBLESTONE = {
+BlockData.COBBLESTONE = {
 	id: 8,
 	spawnable: true,
 	transparent: false,
@@ -111,7 +122,7 @@ BLOCK.COBBLESTONE = {
 };
 
 // Stone
-BLOCK.STONE = {
+BlockData.STONE = {
 	id: 9,
 	spawnable: true,
 	transparent: false,
@@ -121,7 +132,7 @@ BLOCK.STONE = {
 };
 
 // Brick
-BLOCK.BRICK = {
+BlockData.BRICK = {
 	id: 10,
 	spawnable: true,
 	transparent: false,
@@ -132,7 +143,7 @@ BLOCK.BRICK = {
 };
 
 // Sand
-BLOCK.SAND = {
+BlockData.SAND = {
 	id: 11,
 	spawnable: true,
 	transparent: false,
@@ -142,7 +153,7 @@ BLOCK.SAND = {
 };
 
 // Gravel
-BLOCK.GRAVEL = {
+BlockData.GRAVEL = {
 	id: 12,
 	spawnable: true,
 	transparent: false,
@@ -152,7 +163,7 @@ BLOCK.GRAVEL = {
 };
 
 // Iron
-BLOCK.IRON = {
+BlockData.IRON = {
 	id: 13,
 	spawnable: true,
 	transparent: false,
@@ -162,7 +173,7 @@ BLOCK.IRON = {
 };
 
 // Gold
-BLOCK.GOLD = {
+BlockData.GOLD = {
 	id: 14,
 	spawnable: true,
 	transparent: false,
@@ -172,7 +183,7 @@ BLOCK.GOLD = {
 };
 
 // Diamond
-BLOCK.DIAMOND = {
+BlockData.DIAMOND = {
 	id: 15,
 	spawnable: true,
 	transparent: false,
@@ -183,7 +194,7 @@ BLOCK.DIAMOND = {
 
 
 // Obsidian
-BLOCK.OBSIDIAN = {
+BlockData.OBSIDIAN = {
 	id: 16,
 	spawnable: true,
 	transparent: false,
@@ -193,7 +204,7 @@ BLOCK.OBSIDIAN = {
 };
 
 // Glass
-BLOCK.GLASS = {
+BlockData.GLASS = {
 	id: 17,
 	spawnable: true,
 	transparent: true,
@@ -204,7 +215,7 @@ BLOCK.GLASS = {
 };
 
 // Sponge
-BLOCK.SPONGE = {
+BlockData.SPONGE = {
 	id: 18,
 	spawnable: true,
 	transparent: false,
@@ -214,7 +225,7 @@ BLOCK.SPONGE = {
 };
 
 // Water
-BLOCK.WATER = {
+BlockData.WATER = {
 	id: 19,
 	spawnable: true,
 	transparent: true,
@@ -226,7 +237,7 @@ BLOCK.WATER = {
 };
 
 // TNT
-BLOCK.TNT = {
+BlockData.TNT = {
 	id: 20,
 	spawnable: true,
 	transparent: false,
@@ -235,239 +246,61 @@ BLOCK.TNT = {
 	textureStem: 'block/tnt_side.png',
 };
 
-BLOCK.atlasPixelRectDefault = null;
+class Block {
+	constructor() {
+		this.atlasPixelRect = [];
+	}
+	initFromData(key,value) {
+		this.id = key;
+		Object.assign( this, value );
+		return this;
+	}
+	getTx(world,x,y,z,dir) {
+		let block = this;
+		let repo = window.textureRepo;
+		if( block.textureStem ) {
+			repo.getResourceByImg(block.textureStem);
+		}
+		if( block.textureCube ) {
+			repo.getResourceByImg(block.textureCube.top);
+			repo.getResourceByImg(block.textureCube.bot);
+			repo.getResourceByImg(block.textureCube.fro);
+			repo.getResourceByImg(block.textureCube.bac);
+			repo.getResourceByImg(block.textureCube.lef);
+			repo.getResourceByImg(block.textureCube.rig);
+		}
 
-
-BLOCK.traverse = function( fn )
-{
-	for ( var mat in BLOCK )
-		if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat]!==null && typeof(BLOCK[mat].id) !==undefined )
-			fn(BLOCK[mat]);
+		let c = block.atlasPixelRect[dir] || block.atlasPixelRect[0] || Block.atlasPixelRectDefault;
+		return c;
+	}
 }
+Block.atlasPixelRectDefault = [0,0,1,1];
 
-BLOCK.traverse( block=>{ block.atlasPixelRect = []; } );
-
-
-// fromId( id )
-//
-// Returns a block structure for the given id.
-
-BLOCK.fromId = function( id )
-{
-	for ( var mat in BLOCK )
-		if ( typeof( BLOCK[mat] ) == "object" && BLOCK[mat].id == id )
-			return BLOCK[mat];
-	return null;
-}
-
-BLOCK.getTx = function(block,world,x,y,z,dir) {
-	if( block.textureStem ) {
-		window.textureRepo.getResourceByImg(block.textureStem);
+let BlockType = new class {
+	constructor() {
 	}
-
-	let c = block.atlasPixelRect[dir] || block.atlasPixelRect[0] || BLOCK.atlasPixelRectDefault;
-	return c;
-}
-
-// pushVertices( vSolid, vTrans, world, x, y, z )
-//
-// Pushes the vertices necessary for rendering a
-// specific block into the array.
-BLOCK.pushVertices = function( vSolid, vTrans, world, x, y, z )
-{
-	var blocks = world.blocks;
-	var lightMap  = world.lightMap;
-	var block  = blocks[x][y][z];
-	var bH = block.fluid && ( z == world.sz - 1 || !blocks[x][y][z+1].fluid ) ? 0.8 : 1.0;
-	let lightMax = 1.0;
-	let lightFull = [lightMax,lightMax,lightMax];
-
-	let trans = block.trans;
-	let id = block.id;
-
-	// Top
-	if ( z == world.sz - 1 || (world.blocks[x][y][z+1].transparent && world.blocks[x][y][z+1].id!=id) )
-	{
-		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.UP );
-
-		let m = block.selflit || z>=world.sz-1 ? lightFull : lightMap[x][y][z+1];
-		let r = m[0];
-		let g = m[1];
-		let b = m[2];
-
-		//let lightNum = z>=world.sz-1 ? 0 : lightMap[x][y][z+1];
-		//var lightMultiplier = block.selflit ? 1.0 : lightMag[lightNum];
-
-		pushQuad(
-			block.trans ? vTrans : vSolid,
-			[ x, y, z + bH,				c[0], c[1], r, g, b, 1.0 ],
-			[ x + 1.0, y, z + bH,		c[2], c[1], r, g, b, 1.0 ],
-			[ x + 1.0, y + 1.0, z + bH, c[2], c[3], r, g, b, 1.0 ],
-			[ x, y + 1.0, z + bH,		c[0], c[3], r, g, b, 1.0 ]
-		);
+	initFromData(blockData) {
+		for (const [key, value] of Object.entries(blockData)) {
+			console.assert( String.isUpper(key) );
+			this[key] = new Block().initFromData(key,value);
+		}
 	}
-	
-	// Bottom
-	if ( z == 0 || (world.blocks[x][y][z-1].transparent && world.blocks[x][y][z-1].id!=id) )
-	{
-		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.DOWN );
-		
-		let m = block.selflit || z<=0 ? lightFull : lightMap[x][y][z-1];
-		let r = m[0];
-		let g = m[1];
-		let b = m[2];
-		
-		pushQuad(
-			block.trans ? vTrans : vSolid,
-			[ x, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
-			[ x + 1.0, y + 1.0, z,	c[2], c[3], r, g, b, 1.0 ],
-			[ x + 1.0, y, z,		c[2], c[1], r, g, b, 1.0 ],
-			[ x, y, z,				c[0], c[1], r, g, b, 1.0 ]
-		);
-	}
-	
-	// Front
-	if ( y == 0 || (world.blocks[x][y-1][z].transparent && world.blocks[x][y-1][z].id!=id) )
-	{
-		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.FORWARD );
-		
-		let m = block.selflit || y<=0 ? lightFull : lightMap[x][y-1][z];
-		let r = m[0];
-		let g = m[1];
-		let b = m[2];
-		
-		pushQuad(
-			block.trans ? vTrans : vSolid,
-			[ x, y, z,				c[0], c[3], r, g, b, 1.0 ],
-			[ x + 1.0, y, z,		c[2], c[3], r, g, b, 1.0 ],
-			[ x + 1.0, y, z + bH,	c[2], c[1], r, g, b, 1.0 ],
-			[ x, y, z + bH,			c[0], c[1], r, g, b, 1.0 ]
-		);
-	}
-	
-	// Back
-	if ( y == world.sy - 1 || (world.blocks[x][y+1][z].transparent && world.blocks[x][y+1][z].id!=id) )
-	{
-		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.BACK );
-		
-		let m = block.selflit || y>=world.sy-1 ? lightFull : lightMap[x][y+1][z];
-		let r = m[0];
-		let g = m[1];
-		let b = m[2];
-		
-		pushQuad(
-			block.trans ? vTrans : vSolid,
-			[ x, y + 1.0, z + bH,		c[2], c[1], r, g, b, 1.0 ],
-			[ x + 1.0, y + 1.0, z + bH,	c[0], c[1], r, g, b, 1.0 ],
-			[ x + 1.0, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
-			[ x, y + 1.0, z,			c[2], c[3], r, g, b, 1.0 ]
-		);
-	}
-	
-	// Left
-	if ( x == 0 || (world.blocks[x-1][y][z].transparent && world.blocks[x-1][y][z].id!=id) )
-	{
-		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.LEFT );
-		
-		let m = block.selflit || x<=0 ? lightFull : lightMap[x-1][y][z];
-		let r = m[0];
-		let g = m[1];
-		let b = m[2];
-		
-		pushQuad(
-			block.trans ? vTrans : vSolid,
-			[ x, y, z + bH,			c[2], c[1], r, g, b, 1.0 ],
-			[ x, y + 1.0, z + bH,	c[0], c[1], r, g, b, 1.0 ],
-			[ x, y + 1.0, z,		c[0], c[3], r, g, b, 1.0 ],
-			[ x, y, z,				c[2], c[3], r, g, b, 1.0 ]
-		);
-	}
-	
-	// Right
-	if ( x == world.sx - 1 || (world.blocks[x+1][y][z].transparent && world.blocks[x+1][y][z].id!=id) )
-	{
-		let c = BLOCK.getTx( block, world, x, y, z, DIRECTION.RIGHT );
-		
-		let m = block.selflit || x>=world.sx-1 ? lightFull : lightMap[x+1][y][z];
-		let r = m[0];
-		let g = m[1];
-		let b = m[2];
-		
-		pushQuad(
-			block.trans ? vTrans : vSolid,
-			[ x + 1.0, y, z,			c[0], c[3], r, g, b, 1.0 ],
-			[ x + 1.0, y + 1.0, z,		c[2], c[3], r, g, b, 1.0 ],
-			[ x + 1.0, y + 1.0, z + bH,	c[2], c[1], r, g, b, 1.0 ],
-			[ x + 1.0, y, z + bH,		c[0], c[1], r, g, b, 1.0 ]
-		);
+	traverse( fn ) {
+		for ( var key in this ) {
+			let block = this[key];
+			if ( typeof( block ) == "object" && block!==null && typeof(block.id) !==undefined ) {
+				if( fn( block, key ) === false ) {
+					break;
+				}
+			}
+		}
 	}
 }
 
-// pushPickingVertices( vSolid, vTrans, x, y, z )
-//
-// Pushes vertices with the data needed for picking.
-
-BLOCK.pushPickingVertices = function( vertices, x, y, z )
-{
-	var color = { r: x/255, g: y/255, b: z/255 };
-	
-	// Top
-	pushQuad(
-		vertices,
-		[ x, y, z + 1, 0, 0, color.r, color.g, color.b, 1/255 ],
-		[ x + 1, y, z + 1, 1, 0, color.r, color.g, color.b, 1/255 ],
-		[ x + 1, y + 1, z + 1, 1, 1, color.r, color.g, color.b, 1/255 ],
-		[ x, y + 1, z + 1, 0, 0, color.r, color.g, color.b, 1/255 ]
-	);
-	
-	// Bottom
-	pushQuad(
-		vertices,
-		[ x, y + 1, z, 0, 0, color.r, color.g, color.b, 2/255 ],
-		[ x + 1, y + 1, z, 1, 0, color.r, color.g, color.b, 2/255 ],
-		[ x + 1, y, z, 1, 1, color.r, color.g, color.b, 2/255 ],
-		[ x, y, z, 0, 0, color.r, color.g, color.b, 2/255 ]
-	);
-	
-	// Front
-	pushQuad(
-		vertices,
-		[ x, y, z, 0, 0, color.r, color.g, color.b, 3/255 ],
-		[ x + 1, y, z, 1, 0, color.r, color.g, color.b, 3/255 ],
-		[ x + 1, y, z + 1, 1, 1, color.r, color.g, color.b, 3/255 ],
-		[ x, y, z + 1, 0, 0, color.r, color.g, color.b, 3/255 ]
-	);
-	
-	// Back
-	pushQuad(
-		vertices,
-		[ x, y + 1, z + 1, 0, 0, color.r, color.g, color.b, 4/255 ],
-		[ x + 1, y + 1, z + 1, 1, 0, color.r, color.g, color.b, 4/255 ],
-		[ x + 1, y + 1, z, 1, 1, color.r, color.g, color.b, 4/255 ],
-		[ x, y + 1, z, 0, 0, color.r, color.g, color.b, 4/255 ]
-	);
-	
-	// Left
-	pushQuad(
-		vertices,
-		[ x, y, z + 1, 0, 0, color.r, color.g, color.b, 5/255 ],
-		[ x, y + 1, z + 1, 1, 0, color.r, color.g, color.b, 5/255 ],
-		[ x, y + 1, z, 1, 1, color.r, color.g, color.b, 5/255 ],
-		[ x, y, z, 0, 0, color.r, color.g, color.b, 5/255 ]
-	);
-	
-	// Right
-	pushQuad(
-		vertices,
-		[ x + 1, y, z, 0, 0, color.r, color.g, color.b, 6/255 ],
-		[ x + 1, y + 1, z, 1, 0, color.r, color.g, color.b, 6/255 ],
-		[ x + 1, y + 1, z + 1, 1, 1, color.r, color.g, color.b, 6/255 ],
-		[ x + 1, y, z + 1, 0, 0, color.r, color.g, color.b, 6/255 ]
-	);
-}
+BlockType.initFromData(BlockData);
 
 return {
-	BLOCK: BLOCK,
+	BlockType: BlockType,
 	DIRECTION: DIRECTION
 }
 

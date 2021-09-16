@@ -171,6 +171,9 @@ Module.add('utilities',function(extern){
 		}
 		return '('+Math.fixed(x,3)+','+Math.fixed(y,3)+')';
 	}
+	String.isUpper = function(s) {
+		return !/[a-z]/.test(s) && /[A-Z]/.test(s);
+	}
 
 	Array.filterInPlace = function(a, condition, thisArg) {
 		let j = 0;

@@ -4,51 +4,51 @@ Module.add('seedBlock',function(extern) {
 let SeedBlockData = {
 	UNKNOWN: {
 		isUnknown: true,
-		toBLOCK: 'AIR',
+		toBlock: 'AIR',
 	},
 	AIR: {
 		isAir: true,
-		toBLOCK: 'AIR',
+		toBlock: 'AIR',
 	},
 	FLOOR: {
 		isFloor: true,
-		toBLOCK: 'PLANK',
+		toBlock: 'PLANK',
 	},
 	ROOF: {
 		isRoof: true,
-		toBLOCK: 'STONE',
+		toBlock: 'STONE',
 	},
 	WALL: {
 		isWall: true,
-		toBLOCK: 'DIRT',
+		toBlock: 'DIRT',
 	},
 	STAIR: {
 		isStair: true,
-		toBLOCK: 'PLANK',
+		toBlock: 'PLANK',
 	},
 	DOOR: {
 		isDoor: true,
-		toBLOCK: 'GOLD',
+		toBlock: 'GOLD',
 	},
 	BRIDGE: {
 		isDoor: true,
-		toBLOCK: 'PLANK',
+		toBlock: 'PLANK',
 	},
 	WINDOW: {
 		isWindow: true,
-		toBLOCK: 'WINDOW',
+		toBlock: 'WINDOW',
 	},
 	FLUID: {
 		isFluid: true,
-		toBLOCK: 'WATER',
+		toBlock: 'WATER',
 	},
 	MARKER: {
 		isMarker: true,
-		toBLOCK: 'IRON',
+		toBlock: 'IRON',
 	},
 	LIGHT: {
 		isLight: true,
-		toBLOCK: 'TORCH',
+		toBlock: 'TORCH',
 	}
 
 }

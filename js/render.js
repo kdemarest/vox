@@ -187,8 +187,6 @@ Module.add('renderer',function(){
 			// Load terrain texture
 			this.atlas = new Atlas(1024,1024);
 
-			BLOCK.atlasPixelRectDefault = [0,0,1,1];
-
 			// Create canvas used to draw name tags
 			var textCanvas = this.textCanvas = document.createElement( "canvas" );
 			textCanvas.width = 256;
@@ -205,11 +203,11 @@ Module.add('renderer',function(){
 			if( imgStem === false ) {
 				// it is the placeholder...
 				let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
-				BLOCK.atlasPixelRectDefault = rect;
+				Block.atlasPixelRectDefault = rect;
 				return;
 			}
 			let assigned = false;
-			BLOCK.traverse( block => {
+			BlockType.traverse( block => {
 				if( block.textureStem == imgStem ) {
 					let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
 					console.log( imgStem,'at',rect);
@@ -394,8 +392,8 @@ Module.add('renderer',function(){
 					for ( var x = chunk.start[0]; x < chunk.end[0]; x++ ) {
 						for ( var y = chunk.start[1]; y < chunk.end[1]; y++ ) {
 							for ( var z = chunk.start[2]; z < chunk.end[2]; z++ ) {
-								if ( world.blocks[x][y][z] == BLOCK.AIR ) continue;
-								BLOCK.pushVertices( vSolid, vTrans, world, x, y, z );
+								if ( world.blocks[x][y][z] == BlockType.AIR ) continue;
+								world.pushVertices( vSolid, vTrans, x, y, z );
 							}
 						}
 					}

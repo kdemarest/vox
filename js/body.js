@@ -53,7 +53,7 @@ Module.add('body',function(){
 				var obj = this.world;
 				
 				if ( destroy )
-					obj.setBlock( block.x, block.y, block.z, BLOCK.AIR );
+					obj.setBlock( block.x, block.y, block.z, BlockType.AIR );
 				else
 					obj.setBlock( block.x + block.n.x, block.y + block.n.y, block.z + block.n.z, this.owner.viewMaterial.buildMaterial );
 			}

@@ -19,63 +19,63 @@ let MapMaker = class {
 			}
 
 			if( type.isBridge ) {
-				blocks[bx][by][wz-3] = BLOCK.BEDROCK;
-				blocks[bx][by][wz-2] = BLOCK.AIR;
-				blocks[bx][by][wz-1] = BLOCK.AIR;
-				blocks[bx][by][wz+0] = BLOCK.PLANK;
-				blocks[bx][by][wz+1] = BLOCK.AIR;
-				blocks[bx][by][wz+2] = BLOCK.AIR;
-				blocks[bx][by][wz+3] = BLOCK.AIR;
+				blocks[bx][by][wz-3] = BlockType.BEDROCK;
+				blocks[bx][by][wz-2] = BlockType.AIR;
+				blocks[bx][by][wz-1] = BlockType.AIR;
+				blocks[bx][by][wz+0] = BlockType.PLANK;
+				blocks[bx][by][wz+1] = BlockType.AIR;
+				blocks[bx][by][wz+2] = BlockType.AIR;
+				blocks[bx][by][wz+3] = BlockType.AIR;
 			} else
 			if( type.isWall ) {
 				if( this.map.tileTypeGetDir(x,y,0).isDoor || this.map.tileTypeGetDir(x,y,2).isDoor || this.map.tileTypeGetDir(x,y,4).isDoor || this.map.tileTypeGetDir(x,y,6).isDoor ) {
-					blocks[bx][by][wz+1] = BLOCK.BRICK;
-					blocks[bx][by][wz+2] = BLOCK.BRICK;
-					blocks[bx][by][wz+3] = BLOCK.BRICK;
+					blocks[bx][by][wz+1] = BlockType.BRICK;
+					blocks[bx][by][wz+2] = BlockType.BRICK;
+					blocks[bx][by][wz+3] = BlockType.BRICK;
 				}
 			} else
 			if( type.isWindow ) {
-				blocks[bx][by][wz+2] = BLOCK.GLASS;
+				blocks[bx][by][wz+2] = BlockType.GLASS;
 			} else
 			if( type.isTunnel ) {
-				blocks[bx][by][wz+1] = BLOCK.AIR;
-				blocks[bx][by][wz+0] = BLOCK.PLANK
+				blocks[bx][by][wz+1] = BlockType.AIR;
+				blocks[bx][by][wz+0] = BlockType.PLANK
 			} else
 			if( type.isDoor ) {
-				blocks[bx][by][wz+1] = BLOCK.AIR;
-				blocks[bx][by][wz+2] = BLOCK.AIR;
-				blocks[bx][by][wz+3] = BLOCK.BRICK;
+				blocks[bx][by][wz+1] = BlockType.AIR;
+				blocks[bx][by][wz+2] = BlockType.AIR;
+				blocks[bx][by][wz+3] = BlockType.BRICK;
 			} else
 			if( type.isWater ) {
-				blocks[bx][by][wz-1] = BLOCK.WATER;
-				blocks[bx][by][wz+0] = BLOCK.WATER;
-				blocks[bx][by][wz+1] = BLOCK.AIR;
-				blocks[bx][by][wz+2] = BLOCK.AIR;
-				blocks[bx][by][wz+3] = BLOCK.AIR;
+				blocks[bx][by][wz-1] = BlockType.WATER;
+				blocks[bx][by][wz+0] = BlockType.WATER;
+				blocks[bx][by][wz+1] = BlockType.AIR;
+				blocks[bx][by][wz+2] = BlockType.AIR;
+				blocks[bx][by][wz+3] = BlockType.AIR;
 			} else
 			if( type.isPit ) {
-				blocks[bx][by][wz-3] = BLOCK.BEDROCK;
-				blocks[bx][by][wz-2] = BLOCK.AIR;
-				blocks[bx][by][wz-1] = BLOCK.AIR;
-				blocks[bx][by][wz+0] = BLOCK.AIR;
-				blocks[bx][by][wz+1] = BLOCK.AIR;
-				blocks[bx][by][wz+2] = BLOCK.AIR;
-				blocks[bx][by][wz+3] = BLOCK.AIR;
+				blocks[bx][by][wz-3] = BlockType.BEDROCK;
+				blocks[bx][by][wz-2] = BlockType.AIR;
+				blocks[bx][by][wz-1] = BlockType.AIR;
+				blocks[bx][by][wz+0] = BlockType.AIR;
+				blocks[bx][by][wz+1] = BlockType.AIR;
+				blocks[bx][by][wz+2] = BlockType.AIR;
+				blocks[bx][by][wz+3] = BlockType.AIR;
 			} else
 			if( type.isFloor && !type.isBridge ) {
 				let height = Random.Pseudo.intBell(3, 5);
 				for( let z=0 ; z<height ; ++z ) {
-					blocks[bx][by][wz+1+z] = BLOCK.AIR;
+					blocks[bx][by][wz+1+z] = BlockType.AIR;
 				}
-				blocks[bx][by][wz+0] = type.block || BLOCK.DIRT;
+				blocks[bx][by][wz+0] = type.block || BlockType.DIRT;
 			} else {
-				blocks[bx][by][wz+1] = BLOCK.AIR;
-				blocks[bx][by][wz+2] = BLOCK.AIR;
-				blocks[bx][by][wz+3] = BLOCK.AIR;
+				blocks[bx][by][wz+1] = BlockType.AIR;
+				blocks[bx][by][wz+2] = BlockType.AIR;
+				blocks[bx][by][wz+3] = BlockType.AIR;
 			}
 
 			if( type.isLight || ((type.isWall || type.isBridge || type.isPit) && Random.Pseudo.chance100(2)) ) {
-				blocks[bx][by][wz+4] = BLOCK.TORCH;
+				blocks[bx][by][wz+4] = BlockType.TORCH;
 			}
 
 		});
