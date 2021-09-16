@@ -60,7 +60,7 @@ BLOCK.WOOD = {
 BLOCK.TORCH = {
 	id: 4,
 	spawnable: true,
-	transparent: false,
+	transparent: true,
 	selflit: true,
 	light: { mag: 6, r:1.0, g:1.0, b:1.0 },
 	gravity: false,

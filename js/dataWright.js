@@ -2,50 +2,6 @@ Module.add('dataWright',function() {
 
 	let Rand = Random.Pseudo;
 
-	let Block = {
-		UNKNOWN: {
-			isUnknown: true,
-			toBLOCK: 'AIR',
-		},
-		AIR: {
-			isAir: true,
-			toBLOCK: 'AIR',
-		},
-		FLOOR: {
-			isFloor: true,
-			toBLOCK: 'PLANK',
-		},
-		WALL: {
-			isWall: true,
-			toBLOCK: 'DIRT',
-		},
-		STAIR: {
-			isStair: true,
-			toBLOCK: 'PLANK',
-		},
-		DOOR: {
-			isDoor: true,
-			toBLOCK: 'GOLD',
-		},
-		WINDOW: {
-			isWindow: true,
-			toBLOCK: 'WINDOW',
-		},
-		FLUID: {
-			isFluid: true,
-			toBLOCK: 'WATER',
-		},
-		MARKER: {
-			isMarker: true,
-			toBLOCK: 'IRON',
-		},
-		LIGHT: {
-			isLight: true,
-			toBLOCK: 'TORCH',
-		}
-
-	}
-
 	class Node {
 		constructor() {
 			this.x = null
@@ -82,6 +38,18 @@ Module.add('dataWright',function() {
 			this.width    = 1;
 			this.loft     = 5;
 			this.slope    = 0;
+		}
+		get halfWidth() {
+			return Math.floor(this.width/2);
+		}
+		isEdge(i) {
+			return i==-this.halfWidth || i==this.halfWidth;
+		}
+		isCeiling(loft) {
+			return loft==this.loft-1;
+		}
+		isFoot(loft) {
+			return loft == 0;
 		}
 		set( x, y, z, facing, dist, width, loft, slope ) {
 			super.set( x, y, z, facing );
@@ -143,6 +111,7 @@ Module.add('dataWright',function() {
 		constructor(zoneId,details) {
 			this.zoneId  = zoneId;
 			this.details = details;
+			this.stubCandidate = [];
 		}
 	}
 
@@ -167,66 +136,23 @@ Module.add('dataWright',function() {
 		FLOOR:	4,
 		ROOF:	8,
 		START:	16,
-		END:	32
+		END:	32,
+		EDGE:	64,
+		SHEATH:	128,
 	};
-
-	class ChanceTo {
-		constructor(chance100) {
-			this.chance100 = chance100;
-		}
-		test() {
-			return Rand.chance100(this.chance100);
-		}
-	}
-
-	class Range {
-		constructor(rMin,rMax,curve='intRange',offset=0,stride=1) {
-			console.assert( Rand[curve] );
-			if( curve=='intRange' || curve=='intBell' ) {
-				console.assert( Number.isInteger(rMin) && Number.isInteger(rMax) );
-				console.assert( Number.isInteger(offset) && Number.isInteger(stride) );
-			}
-			console.assert( rMin<=rMax );
-			this.rMin = rMin;
-			this.rMax = rMax;
-			this.curve = curve;
-			this.offset = offset;
-			this.stride = stride;
-		}
-		get min() {
-			return this.offset+this.rMin*this.stride;
-		}
-		get max() {
-			return this.offset+this.rMax*this.stride;
-		}
-		roll() {
-			return this.offset+Rand[this.curve](this.rMin,this.rMax)*this.stride;
-		}
-	}
-
-	class Often {
-		constructor(chance100,value,otherRoller) {
-			this.chance100 = chance100;
-			this.value = value;
-			this.otherRoller = otherRoller;
-		}
-		roll() {
-			return Rand.chance100(this.chance100) ? this.value : this.otherRoller.roll();
-		}
-	}
 
 	class PathControls {
 		constructor() {
 			this.setDefaults();
 		}
 		setDefaults() {
-			this.rgDist      = new Range(2,20,'intBell');
-			this.ctTurn      = new ChanceTo(50);
-			this.ctRise      = new ChanceTo(30);
-			this.ctFall      = new ChanceTo(30);
-			this.rgSlope     = new Often(50,1,new Range(1/4,1,'floatRange'));
-			this.ctWiden     = new ChanceTo(100);
-			this.rgWidth     = new Range(0,3,'intRange',1,2);
+			this.rgDist      = new Roller.Range(2,20,'intBell');
+			this.ctTurn      = new Roller.ChanceTo(50);
+			this.ctRise      = new Roller.ChanceTo(30);
+			this.ctFall      = new Roller.ChanceTo(30);
+			this.rgSlope     = new Roller.Often(50,1,new Roller.Range(1/4,1,'floatRange'));
+			this.ctWiden     = new Roller.ChanceTo(100);
+			this.rgWidth     = new Roller.Range(0,3,'intRange',1,2);
 			this.roofMin     = 5;
 			this.lightSpacing = 20;
 			return this;
@@ -256,19 +182,21 @@ Module.add('dataWright',function() {
 			this.sheath = sheath;
 			return this;
 		}
-		get fullWidth() {
-			return this.width+(this.sheath*2);
+		get halfWidth() {
+			return Math.floor(this.width/2);
 		}
 		stripe(fn,z=this.z,dist=0,distTotal=0) {
 			let ahead = Dir.add[this.dir];
 			let right = Dir.add[Dir.right(this.dir)];
-			let hw = Math.floor(this.width/2);
+			let hw = this.halfWidth;
 			let x = this.x + ahead.x*dist - right.x*(hw+this.sheath);
 			let y = this.y + ahead.y*dist - right.y*(hw+this.sheath);
 			let flagSE = (dist<0 ? FLAG.START : 0) | (dist>distTotal ? FLAG.END : 0);
 
 			for( let i=-(hw+this.sheath) ; i<=hw+this.sheath ; ++i ) {
 				let flagLR = flagSE;
+				flagLR |= (i==-hw || i==hw) ? FLAG.EDGE : 0;
+				flagLR |= (i<-hw || i>hw) ? FLAG.SHEATH : 0;
 				flagLR |= (i<-hw ? FLAG.LWALL : 0) | (i>hw ? FLAG.RWALL : 0 );
 				for( let loft = -this.sheath ; loft<this.loft+this.sheath ; ++loft ) {
 					let flags = flagLR;
@@ -284,6 +212,61 @@ Module.add('dataWright',function() {
 		}
 		traverse(fn) {
 			return this.stripe(fn,this.z,0,0);
+		}
+	}
+
+	class RakeReach {
+		set(dir,x,y,z) {
+			console.assert( Dir.validate(dir) );
+			console.assert( Coordinate.validateMany(x,y,z) );
+			this.dir = dir;
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			return this;
+		}
+		detect(map3d) {
+			let maxReach = 16;
+			let reach = [];
+
+			let lateralLimit = 8;
+			let ahead = Dir.add[this.dir];
+			let right = Dir.add[Dir.right(this.dir)];
+			let iOffset = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8, -9, 9 ];
+
+			// WARNING! We do not loft at this time! That is because we expect to conver this to use
+			// a 2d map of cached blocks.
+
+			for( let d=0 ; d<maxReach ; ++d ) {
+				let allowWall = (d==0);
+				let i = 0;
+				while( Math.abs(iOffset[i]) < lateralLimit ) {
+					let x = this.x + ahead.x*d - right.x*iOffset[i];
+					let y = this.y + ahead.y*d - right.y*iOffset[i];
+					let block = map3d.getBlock( x, y, this.z );
+					if( !(block.isUnknown || block.isWall==allowWall) ) {
+						lateralLimit = Math.abs( iOffset[i] );
+						break;
+					}
+					i += 1;
+				}
+				reach[d] = lateralLimit
+			}
+			return reach;
+		}
+		traverse(dist,width,distStartOffset,fn) {
+			let hw = Math.floor(width/2);
+			let ahead = Dir.add[this.dir];
+			let right = Dir.add[Dir.right(this.dir)];
+
+			for( let d=0+distStartOffset ; d<dist ; ++d ) {
+				for( let i=0 ; i<width ; ++i ) {
+					let x = this.x + ahead.x*d - right.x*(i-hw);
+					let y = this.y + ahead.y*d - right.y*(i-hw);
+
+					fn( x, y, this.z, i, d, i-hw );
+				}
+			}
 		}
 	}
 
@@ -316,8 +299,8 @@ Module.add('dataWright',function() {
 	let Driver = {};
 
 	Driver.Base = class {
-		constructor(map) {
-			this.map  = map;
+		constructor(map3d) {
+			this.map3d  = map3d;
 			this.headStack = [new Head()];
 			this.nodeList = new NodeList();
 			this.zoneList = new ZoneList();
@@ -354,8 +337,8 @@ Module.add('dataWright',function() {
 			// TO DO : vary the distance by actual dist to edge of map.
 			let rake = new RakePath().set(dir,x,y,z,width,loft,slope,20);
 			rake.traverse( (x,y,z,i,loft,dist,flags) => {
-				let block = this.map.getVal(x,y,z,'block');
-				if( !block.isUnknown ) {
+				let seedBlock = this.map3d.getVal(x,y,z,'block');
+				if( !seedBlock.isUnknown ) {
 					distFound = dist-1;
 					return false;
 				}
@@ -366,12 +349,12 @@ Module.add('dataWright',function() {
 	}
 
 	Driver.StraightLine = class extends Driver.Base {
-		init(map,pathLength,pathControls) {
-			this.map = map;
+		init(map3d,pathLength,pathControls) {
+			this.map3d = map3d;
 			// set( x, y, z, facing, dist, width, loft, slope )
-			this.head.set( this.map.xMin+1, this.map.yHalf, this.map.zHalf, Dir.EAST, 0, 3, 5, 0 );
+			this.head.set( this.map3d.xMin+1, this.map3d.yHalf, this.map3d.zHalf, Dir.EAST, 0, 3, 5, 0 );
 			this.facingForbidden = Dir.reverse(this.head.facing);
-			this.pathControls = pathControls || new PathControls().setDefaults();
+			this.pathControls = Object.assign( new PathControls().setDefaults(), pathControls );
 			this.remaining    = pathLength;
 			return this;
 		}
@@ -428,71 +411,80 @@ Module.add('dataWright',function() {
 			console.log( "Steer dist="+head.dist+" width="+head.width );
 		}
 		advancePath() {
-			let h = this.head;
+			let head = this.head;
 			let sheath = 1;
 			let capNear = 1;
 			let capFar  = 0;
-			let Block = this.map.block;
-			let turn = h.turn;
+			let turn = head.turn;
 			let flagTURN  = (turn=='left' ? 0 : FLAG.LWALL) | (turn=='right' ? 0 : FLAG.RWALL);
 			let noSlope   = 0;
-			let cornerDist = h.width;
-			let entryDist  = !h.last ? 0 : h.last.width;
+			let cornerDist = head.width;
+			let entryDist  = !head.last ? 0 : head.last.width;
 
 
-			console.log("head root = "+h.x+','+h.y);
+			console.log("head root = "+head.x+','+head.y);
 			// This actually changes the facing.
 			if( turn ) {
 				console.log("turning");
 				let cornerHalf = Math.floor(cornerDist/2);
-				h.move(h.facing,noSlope,cornerHalf);
-				h.facing = Dir[turn](h.facing);
+				head.move(head.facing,noSlope,cornerHalf);
+				head.facing = Dir[turn](head.facing);
 				let entryHalf = Math.floor(entryDist/2);
-				h.move(Dir.reverse(h.facing),noSlope,entryHalf);
+				head.move(Dir.reverse(head.facing),noSlope,entryHalf);
 			}
 
 			// this keeps things flat until we've made the corner section.
-			let slopeFn = dist => turn && dist<=cornerDist ? 0 : h.slope;
+			let slopeFn = dist => turn && dist<=cornerDist ? 0 : head.slope;
 			// set(dir,x,y,z,width,loft,dist,slope,sheath,cap)
-			let rake = new RakePath().set( h.facing, h.x, h.y, h.z, h.width, h.loft, h.dist, slopeFn, sheath, capNear, capFar );
+			let rake = new RakePath().set( head.facing, head.x, head.y, head.z, head.width, head.loft, head.dist, slopeFn, sheath, capNear, capFar );
 
-			console.log( 'head='+h.x+','+h.y );
+			console.log( 'head='+head.x+','+head.y );
 			rake.traverse( (x,y,z,i,loft,dist,flags) => {
 				let inTurn = (turn && dist < entryDist);
-				let block = Block.AIR;
+				let seedBlock = SeedBlockType.AIR;
 
-				if( flags & FLAG.FLOOR )		{ block = Block.FLOOR; }
-				if( flags & FLAG.ROOF)			{ block = Block.WALL; }
+				if( flags & FLAG.FLOOR )		{ seedBlock = SeedBlockType.FLOOR; }
+				if( flags & FLAG.ROOF)			{ seedBlock = SeedBlockType.WALL; }
 				if( inTurn ) {
-					if( flags & FLAG.START )	{ block = Block.WALL; }
-					if( flags & flagTURN )		{ block = Block.WALL; }
+					if( flags & FLAG.START )	{ seedBlock = SeedBlockType.WALL; }
+					if( flags & flagTURN )		{ seedBlock = SeedBlockType.WALL; }
 				}
 				else
-				if( flags & (FLAG.LWALL|FLAG.RWALL) ) { block = Block.WALL; }
+				if( flags & (FLAG.LWALL|FLAG.RWALL) ) { seedBlock = SeedBlockType.WALL; }
 
-				//let ceilingMiddle = i==0 && loft==h.loft-1;
-				let ceilingMiddle = i==-Math.floor(h.width/2) && loft==2;
+				//let ceilingMiddle = i==0 && loft==head.loft-1;
+				let ceilingMiddle = i==-Math.floor(head.width/2) && loft==2;
 				let spaced = (this.remaining-dist) % this.pathControls.lightSpacing == 0;
 				if( ceilingMiddle && spaced ) {
-					block = Block.LIGHT;
+					seedBlock = SeedBlockType.LIGHT;
 				}
 
-				if( x==h.x && y==h.y && (flags & FLAG.FLOOR) ) {
-					block = Block.MARKER;
+				if( x==head.x && y==head.y && (flags & FLAG.FLOOR) ) {
+					seedBlock = SeedBlockType.MARKER;
 				}
 
-				console.log(block);
+				//console.log(seedBlock);
 				console.assert(this.zone.zoneId>=0);
-				let curBlock = this.map.getBlock(x,y,z);
-				if( curBlock.isUnknown ) {
-					this.map.setVal(x,y,z,block,this.zone.zoneId);
-					console.assert( this.map.spot[x][y][z].zoneId == this.zone.zoneId );
+				let curSeedBlock = this.map3d.getBlock(x,y,z);
+				if( curSeedBlock.isUnknown ) {
+					this.map3d.setVal(x,y,z,seedBlock,this.zone.zoneId);
+					if( head.isFoot(loft) && flags & FLAG.SHEATH ) {
+						this.zone.stubCandidate.push({
+							x: x,
+							y: y,
+							z: z,
+							facing: i<0 ? Dir.left(head.facing) : Dir.right(head.facing)
+						});
+					}
 				}
 			});
+			head.zFinal = rake.zFinal;
+		}
 
+		advanceHead() {
 			let distTraveled = this.head.dist+1;
 			this.head.advance(this.head.dist);
-			this.head.z = rake.zFinal;
+			this.head.z = this.head.zFinal;
 			this.head.dist = 0;
 
 			this.remaining -= distTraveled;
@@ -511,150 +503,103 @@ Module.add('dataWright',function() {
 			this.advancePath();
 		}
 
+		makeStubLayout(stubCandidate,head) {
+			let StubLayoutType = [
+				// Straight from the corner
+				// To the side at the corner
+				// Repeating with periodicity 4, 6, 8, or 10... on one side or both
+				[0.5],
+				[0.5,'across'],
+				[0.25,0.75],
+				[0.25,'across',0.75,'across']
+			];
+			let symmetric = Rand.chance100(50);
+
+			let stubLayout = [];
+
+
+			// WARNING!!! THIS IS VERY HARD CODED. It should be responsive to head dist...
+			let max = head.dist > 12 ? 4 : 2;
+			let layoutType = StubLayoutType[ Rand.intRange( 0, max ) ];
+			let cursorIndex = null;
+			layoutType.forEach( n => {
+				let isAcross = false;
+				if( typeof n == 'number' ) {
+					cursorIndex = Math.floor(stubCandidate.length/2);
+				}
+				else
+				if( n == 'across' ) {
+					cursorIndex += 1;
+					isAcross = true;
+				}
+				let stub = stubCandidate[cursorIndex];
+				stub.symmetric = isAcross && symmetric;
+				stubLayout.push( stub );
+			});
+			return stubLayout;
+		}
+
+
+		buildStubs() {
+
+			let stubLayout = this.makeStubLayout( this.zone.stubCandidate, this.head );
+			let lastStub = null;
+
+			for( let index = 0 ; index < stubLayout.length ; ++index ) {
+				let sc = stubLayout[index];
+				let rakeReach = (new RakeReach()).set( sc.facing, sc.x, sc.y, sc.z );
+				let reach = rakeReach.detect(this.map3d);
+				let seedList = Object.values(SeedType).filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
+				console.log('picking from '+seedList.length+' seeds.' );
+				if( seedList.length <= 0 ) {
+					return false;
+				}
+				let seed = seedList[ Rand.intRange(0,seedList.length-1) ];
+			//seed = SeedType.PIT_ALCOVE;
+
+				let seedBrush = new SeedBrush(seed, (x,y,z,block) => {
+					this.map3d.setVal( x, y, z, block );
+				});
+
+				seedBrush.setPalette({});
+
+				rakeReach.traverse( seed.yLen, seed.xLen, -1, ( x, y, zOrigin, sx, dist, i ) => {
+					seedBrush.setCursor( x, y, zOrigin, dist, i );
+					if( dist < 0 ) {
+						seedBrush.stroke( null );	// just for filling in walls beside pits
+						return;
+					}
+					let sy = seed.yLen - dist - 1;
+					let seedTile = seed.map2d.getTile(sx,sy);
+					let seedMarkup = seed.map2d.getZoneId(sx,sy);
+					seedBrush
+						.stroke( seedTile )
+						.markup( seedMarkup );
+					;
+	//				if( sx == 1 && sy == 1 ) {
+	//					this.map3d.setVal(x,y,zOrigin+1,SeedBlockType.LIGHT);
+	//				}
+				});
+			}
+		}
+
 		advance() {
-			let result = this.buildPath();
-			return result;
+			this.buildPath();
+			this.buildStubs();
+			this.advanceHead();
+			//return result;
 		}
 	}
-/*
-	let Decider = {};
-
-	Decider.Gen = class {
-		constructor(driver,distMin,distMax,widthMin) {
-			this.driver   = driver;
-			this.distMin  = distMin;
-			this.distMax  = distMax;
-			this.widthMin = widthMin;
-		}
-		pickStraight(x,y,dir) {
-			while( this.width >= this.widthMin ) {
-				let ray = this.driver.rayHit( x, y, dir, this.width );
-				if( ray === true ) {
-					return dir;
-				}
-				this.width -= 1;
-			}
-			return false;
-		}
-		pickTurn(x,y,dir) {
-			while( this.width >= this.widthMin ) {
-				let left = Dir.left(dir);
-				let right = Dir.right(dir);
-				let leftRay  = this.driver.rayHit( x, y, left,  this.width );
-				let rightRay = this.driver.rayHit( x, y, right, this.width );
-				if( leftRay === true && rightRay === true ) {
-					return Rand.chance100(50) ? left : right;
-				}
-				if( leftRay === true ) {
-					return left;
-				}
-				if( rightRay === true ) {
-					return right;
-				}
-				this.width -= 1;
-				if( this.isRoom ) {		// crazy convenient violation of coding norms.
-					this.dist -= 2;
-				}
-			}
-			return false;
-		}
-	}
-
-	Decider.Hall = class extends Decider.Gen {
-		constructor(driver) {
-			super(driver,1,6,0);
-			this.chanceToTurnAtStart = 50;
-		}
-		get isRoom() { return false; }
-		get isHall() { return true; }
-		init() {
-			this.turn       = Rand.chance100(this.chanceToTurnAtStart);
-			this.dist       = Math.min( this.driver.remaining, Rand.intRange(this.distMin,this.distMax) );
-			this.width      = Math.min( Math.floor((this.dist-1)/2), Rand.intRange( this.widthMin, this.widthMin+2 ) );
-			if( this.turn && this.dist < this.width+2 ) {
-				this.dist = this.width+2;
-			}
-			return this.dist >= this.distMin;
-		}
-	}
-
-	Decider.Room = class extends Decider.Gen {
-		constructor(driver) {
-			super(driver,3,6,1);
-		}
-		get isRoom() { return true; }
-		init() {
-			this.turn       = false;
-			this.dist       = Math.min( this.driver.remaining, Rand.intRange(this.distMin,this.distMax) );
-			this.width      = Math.max(0, Math.floor( (this.dist-1) / 2 ) );
-			return this.dist >= this.distMin;
-		}
-	}
-
-	Driver.Winding = class extends Driver.StraightLine {
-		init(pathLength) {
-			super.init(pathLength);
-			this.facingForbidden = Dir.reverse(this.head.facing);
-		}
-
-		steer() {
-			let gen;
-			let facing = false;
-
-			let beRoom = !this.head.isRoom;
-			if( beRoom ) {
-				gen = new Decider.Room(this)
-				gen.init();
-				facing = gen.pickStraight(this.head.x,this.head.y,this.head.facing);
-			}
-
-			if( !beRoom || facing === false ) {
-				gen = new Decider.Hall(this)
-				gen.init();
-				if( gen.turn ) {
-					facing = gen.pickTurn(this.head.x,this.head.y,this.head.facing);
-					if( facing === false ) {
-						gen.turn = false;	// go straight; a turn wasn't possible
-					}
-				}
-				if( !gen.turn )  {
-					facing = gen.pickStraight(this.head.x,this.head.y,this.head.facing);
-					if( facing === false ) {
-						debugger;
-						gen.width = 0;
-						let temp = gen.pickStraight(this.head.x,this.head.y,this.head.facing);
-					}
-				}
-			}
-			Dir.validate(facing);
-			console.assert( facing !== false );
-
-			let zoneId = this.zoneList.increment();
-			this.zoneList.add( new Zone(zoneId,gen) );
-			this.head.zoneId = zoneId;
-			this.head.steps  = gen.dist;
-			this.head.width  = gen.width;
-			this.head.gapEntry = this.head.facing;	// WARNING: set this before setting head.facing!
-			this.head.gapExit  = facing;
-			this.head.facing   = facing;
-			this.head.isRoom = gen.isRoom;
-			let policy = this.head.policy;
-			if( !this.head.isRoom ) {
-				policy.isNarrow = this.head.width>0 ? false : Rand.chance100(50) ? policy.isNarrow : !policy.isNarrow;
-			}
-		}
-	}
-*/
 
 	class Wright {
 		constructor() {
 		}
-		init(xLen,yLen,zLen,pathLength) {
-			this.map = new Map3d(Block);
-			this.map.set(0,0,0,xLen,yLen,zLen);
+		init(xLen,yLen,zLen,pathLength,pathControls) {
+			this.map3d = new Map3d(SeedBlockType);
+			this.map3d.set(0,0,0,xLen,yLen,zLen);
 
 			this.driver = new Driver.StraightLine();
-			this.driver.init(this.map,pathLength,null);
+			this.driver.init(this.map3d,pathLength,pathControls);
 			return this;
 		}
 		tick() {
@@ -662,7 +607,7 @@ Module.add('dataWright',function() {
 				while( !this.driver.isDone ) {
 					this.driver.advance();
 				}
-				this._renderFn(this.map);
+				this._renderFn(this.map3d);
 			}
 
 //			if( !this.driver.isDone ) {

@@ -20,6 +20,8 @@
 <script src="js/utilities.js" type="text/javascript"></script>
 <script src="js/utilPick.js" type="text/javascript"></script>
 <script src="js/utilChance.js" type="text/javascript"></script>
+<script src="js/utilTextMapParser.js" charset="utf-8"></script>
+<script src="js/utilRoller.js" charset="utf-8"></script>
 <script src="js/types.js" type="text/javascript"></script>
 <script src="js/data.js" type="text/javascript"></script>
 <script src="js/dataStickers.js" type="text/javascript"></script>
@@ -34,7 +36,12 @@
 <script src="js/dataChecker.js" charset="utf-8"></script>
 <script src="js/dataPicker.js" charset="utf-8"></script>
 <script src="js/dataMason.js" charset="utf-8"></script>
+<script src="js/dataSeedTile.js" charset="utf-8"></script>
+<script src="js/dataSeedBlock.js" charset="utf-8"></script>
+<script src="js/dataSeed.js" charset="utf-8"></script>
+<script src="js/map2d.js" charset="utf-8"></script>
 <script src="js/map3d.js" charset="utf-8"></script>
+<script src="js/seed.js" charset="utf-8"></script>
 <script src="js/dataWright.js" charset="utf-8"></script>
 <script src="js/path.js" charset="utf-8"></script>
 <script src="js/place.js" charset="utf-8"></script>
@@ -92,6 +99,7 @@ Module.add( 'playerControls', ()=> {
 					this.pointerLock();
 				}
 			}
+			this.keyDef['g'] = this.keyDef['G'] =	(target,value) => { if( value ) target.collide = !target.collide; }
 			this.keyDef['r'] = this.keyDef['R'] =	(target,value) => { target.up = value; }
 			this.keyDef['f'] = this.keyDef['F'] =	(target,value) => { target.up = -value; }
 
@@ -217,6 +225,24 @@ function mapGenerate() {
 	return masonMap.renderToString();
 }
 
+let wrightToWorld = (map,world) => {
+	world.bulkChangeBegin();
+	let count = 0;
+	map.traverse( (x,y,z) => {
+		let b = BLOCK[map.getBlock(x,y,z).toBLOCK];
+		console.assert(b);
+		let zoneId = map.getZoneId(x,y,z);
+		if( b==BLOCK.DIRT && (zoneId%2)==1 ) { // !== -1 && wright.driver.getZone(zoneId).wallToggle ) {
+			b = BLOCK.BRICK;
+		}
+		if( world.contains(x,y,z) ) {
+			world.setBlock(x,y,z,b);
+			count += 1;
+		}
+	});
+	world.bulkChangeEnd();
+}
+
 
 async function main(){
 
@@ -225,7 +251,7 @@ async function main(){
 	}
 
 	window.IMG_BASE = "media/";
-	let pseudoRandomSeed = 222;
+	let pseudoRandomSeed = 2622;
 	let flogueConfigEnvVariableId = 'flogueConfigId';
 
 	window.openGl = new OpenGl( "renderSurface" );
@@ -253,10 +279,16 @@ async function main(){
 //	world.createFlatWorld( 16 );
 //	mapMaker.makeIntoWorld(world);
 
-	let wright = new Wright().init( 16*8, 16*8, 16*8, pathLength=16*8 );
+	let pathControls = {
+		rgDist: new Roller.Range(12,30,'intRange'),
+		ctRise: new Roller.ChanceTo(10),
+		ctFall: new Roller.ChanceTo(10),
+		rgWidth: new Roller.Range(0,1,'intRange',3,2),
+		lightSpacing: 16,
+	}
+	let wright = new Wright().init( 16*8, 16*8, 16*8, pathLength=30*8, pathControls );
 
-
-	world.init(wright.map.xLen,wright.map.yLen,wright.map.zLen);
+	world.init(wright.map3d.xLen,wright.map3d.yLen,wright.map3d.zLen);
 	world.createFlatWorld( 30 );	// dirt below, air above.
 	brainlessLight(world);
 	let head = wright.driver.head;
@@ -276,24 +308,7 @@ async function main(){
 	let canvas = document.getElementById('renderSurface');
 	let controls = new PlayerControls(canvas,player.body);
 
-	wright._renderFn = map => {
-		world.bulkChangeBegin();
-		let count = 0;
-		map.traverse( (x,y,z) => {
-			let b = BLOCK[map.getBlock(x,y,z).toBLOCK];
-			console.assert(b);
-			let zoneId = map.getZoneId(x,y,z);
-			if( b==BLOCK.DIRT && (zoneId%2)==1 ) { // !== -1 && wright.driver.getZone(zoneId).wallToggle ) {
-				b = BLOCK.BRICK;
-			}
-			if( world.contains(x,y,z) ) {
-				world.setBlock(x,y,z,b);
-				count += 1;
-			}
-		});
-		world.bulkChangeEnd();
-	}
-
+	wright._renderFn = (map) => wrightToWorld(map,world);
 
 	window.tickCall = function() {
 		var time = new Date().getTime() / 1000.0;

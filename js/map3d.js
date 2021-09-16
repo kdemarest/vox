@@ -80,11 +80,11 @@ Module.add('map3d',function(extern) {
 	}
 
 	class Map3d extends Rect3d {
-		constructor(blockList) {
+		constructor(blockType) {
 			super();
 			this.spot = [];
-			this.block = blockList;
-			console.assert( this.block );
+			this.blockType = blockType;
+			console.assert( this.blockType );
 		}
 		attach(otherMap3d) {
 			this.spot = otherMap3d.spot;
@@ -92,7 +92,7 @@ Module.add('map3d',function(extern) {
 		}
 		set(x,y,z,xLen,yLen,zLen) {
 			super.set(x,y,z,xLen,yLen,zLen);
-			this.fillWeak(this.block.UNKNOWN);
+			this.fillWeak(this.blockType.UNKNOWN);
 			return this;
 		}
 		getVal(x,y,z,key) {
@@ -130,7 +130,7 @@ Module.add('map3d',function(extern) {
 		}
 		getBlock(x,y,z) {
 			let block = this.getVal(x,y,z,'block');
-			return block === undefined ? this.block.UNKNOWN : block || this.block.UNKNOWN;
+			return block === undefined ? this.blockType.UNKNOWN : block || this.blockType.UNKNOWN;
 		}
 		getZoneId(x,y,z) {
 			let zoneId = this.getVal(x,y,z,'zoneId');
@@ -199,6 +199,7 @@ Module.add('map3d',function(extern) {
 return {
 	Rect3d: Rect3d,
 	Map3d: Map3d,
+	NO_ZONE: NO_ZONE,
 }
 
 });
