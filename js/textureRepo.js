@@ -47,7 +47,7 @@ class TextureRepo {
 				texture: webglUtils.imageToTexture(window.openGl.gl,nativeImage)
 			};
 
-			console.log('img ready',imgStem);
+			//console.log('img ready',imgStem);
 
 			this.imgStateList[imgPath] = imgREADY;
 			this.notifierFn( 'imgReady', imgStem, this.resources[imgStem] );

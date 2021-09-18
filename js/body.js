@@ -186,7 +186,7 @@ Module.add('body',function(){
 		{
 
  			function sideCollide(block) {
- 				return !block.isAir && !block.fluid;
+ 				return !block.passable && !block.fluid;
  			}
 
 			let result = {};
@@ -254,11 +254,11 @@ Module.add('body',function(){
 				for ( var y = bPos.y - 1; y <= bPos.y + 1; y++ )
 				{
 					let b0 = world.getBlock( x, y, newBZLower );
-					if ( b0.collide !== false && !b0.fluid )
+					if ( !b0.passable && !b0.fluid )
 						zCandidate.push( { z: newBZLower + 1, dir: 1, x1: x, y1: y, x2: x + 1, y2: y + 1, fluid: false/*b0.fluid*/ } );
 					
 					let b1 = world.getBlock( x, y, newBZUpper )
-					if ( b1.collide !== false && !b1.fluid )
+					if ( !b1.passable !== false && !b1.fluid )
 						zCandidate.push( { z: newBZUpper, dir: -1, x1: x, y1: y, x2: x + 1, y2: y + 1, fluid: false /*b1.fluid*/ } );
 				}
 			}
@@ -277,7 +277,7 @@ Module.add('body',function(){
 			}
 
 			let eyeZ = pos.z + this.getEyeHeight(forceStand);
-			if( world.getBlock(bPos.x,bPos.y,Math.floor(eyeZ)).isAir ) {
+			if( world.getBlock(bPos.x,bPos.y,Math.floor(eyeZ)).passable ) {
 				result.atSurface = true;
 			}
 

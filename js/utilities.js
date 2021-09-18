@@ -24,7 +24,7 @@ Module.add('utilities',function(extern){
 			return Math.floor( this.randomFloat * (max - min) ) + min;
 		}
 		intBell(min, max) {
-			let span = (max-min)/3;
+			let span = (max-min+1)/3;
 			return min + Math.floor( this.randomFloat*span + this.randomFloat*span + this.randomFloat*span );
 		}
 		chance100(percent) {
@@ -34,7 +34,7 @@ Module.add('utilities',function(extern){
 			return this.randomFloat*(max-min)+min;
 		}
 		floatBell(min, max) {
-			let span = (max-min)/3;
+			let span = (max-min+1)/3;
 			return min + this.randomFloat*span + this.randomFloat*span + this.randomFloat*span;
 		}
 		chance(fPercent) {

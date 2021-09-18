@@ -187,7 +187,7 @@ class TextureWriter {
 		let px = x / this.width;
 		let py = y / this.height;
 		this.positionBufferPopulate(gl,px,py,px+txWidth/this.width,py+txHeight/this.height);
-		console.log('write pos buf ', this.positionBuffer );
+		//console.log('write pos buf ', this.positionBuffer );
 
 		// Tell it to use our program (pair of shaders)
 		gl.useProgram(this.program);

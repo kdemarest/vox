@@ -84,37 +84,6 @@ Module.add('renderer',function(){
 		}
 	}
 
-	class Atlas extends TextureWriter {
-		constructor(width,height) {
-			super();
-			this.xOffset = 0;
-			this.yOffset = 0;
-			this.yMaxHeight = 0;
-
-			let gl = window.openGl.gl;
-			this.init(gl);
-			this.create(gl,width,height);
-		}
-		add( txSource, txWidth, txHeight ) {
-			let gl = window.openGl.gl;
-
-			if( this.xOffset + txWidth >= this.width ) {
-				this.xOffset = 0;
-				this.yOffset += this.yMaxHeight;
-				this.yMaxHeight = 0;
-			}
-
-			this.draw(gl,txSource,this.xOffset,this.yOffset,txWidth,txHeight);
-			let rect = this.coord( this.xOffset, this.yOffset, txWidth, txHeight );
-			this.xOffset += txWidth;
-			this.yMaxHeight = Math.max( this.yMaxHeight, txHeight );
-			return rect;
-		}
-		coord( xPixel, yPixel, width, height ) {
-			return [ xPixel/this.width, yPixel/this.height, (xPixel+width)/this.width, (yPixel+height)/this.height ];
-		}
-	}
-
 	class ShaderSet {
 		constructor() {
 			this.gl = window.openGl.gl;
@@ -185,7 +154,7 @@ Module.add('renderer',function(){
 			gl.uniform1i(  this.uSampler, 0 );
 
 			// Load terrain texture
-			this.atlas = new Atlas(1024,1024);
+			this.textureAtlas = new TextureAtlas(1024,1024);
 
 			// Create canvas used to draw name tags
 			var textCanvas = this.textCanvas = document.createElement( "canvas" );
@@ -202,19 +171,24 @@ Module.add('renderer',function(){
 		onImageComplete( status, imgStem, resource ) {
 			if( imgStem === false ) {
 				// it is the placeholder...
-				let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
-				Block.atlasPixelRectDefault = rect;
+				let rect = this.textureAtlas.add( resource.texture, resource.texture.width, resource.texture.height );
+				Block.textureAtlasPixelRectDefault = rect;
 				return;
 			}
 			let assigned = false;
+			// the rect is in this order: [ xPixel/this.width, yPixel/this.height, (xPixel+width)/this.width, (yPixel+height)/this.height ]
+			let textureRect = this.textureAtlas.add( resource.texture, resource.texture.width, resource.texture.height );
 			BlockType.traverse( block => {
-				if( block.textureStem == imgStem ) {
-					let rect = this.atlas.add( resource.texture, resource.texture.width, resource.texture.height );
-					console.log( imgStem,'at',rect);
-					block.atlasPixelRect = [rect];	// zero'th index means 'all directions use this rect'
-					assigned = true;
-					return;
-				}
+				let indent = block.indent || [0,1,0,1,0,1];
+				BlockDir.traverse( blockDir => {
+					if( block.textureStem[blockDir] == imgStem ) {
+						//console.log( imgStem,':',blockDir,'at',textureRect);
+						block.textureAtlasPixelRect[blockDir] = textureRect;	// zero'th index means 'all directions use this textureRect'
+						assigned = true;
+						// NOTE: We could break out here, but this method allows multiple block to have the same
+						// texture.
+					}
+				});
 			});
 			for ( var i = 0; i < this.chunks.length; i++ )
 				this.chunks[i].dirty = true;
@@ -250,7 +224,7 @@ Module.add('renderer',function(){
 			// Draw level chunks
 			var chunks = this.chunks;
 			
-			gl.bindTexture( gl.TEXTURE_2D, this.atlas.texture ); //this.texTerrain );
+			gl.bindTexture( gl.TEXTURE_2D, this.textureAtlas.texture ); //this.texTerrain );
 
 			if ( chunks != null )
 			{

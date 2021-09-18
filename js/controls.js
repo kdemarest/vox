@@ -40,18 +40,33 @@ class Controls {
 			return;
 		}
 		this.target.keyHash[key] = value;
-		}
+	}
+	suppressContextMenu() {
+		window.addEventListener("contextmenu", (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			return false;
+		}, true);
+	}
 	addListener(element=this.canvas) {
 		let onKeyDown = (event)=>{
-			if( this.keyDef[event.key] ) {
-				this.keyDef[event.key](this.target,1);
-				event.preventDefault();
+			if( event.key == 'Control' ) return;
+			let key = (event.ctrlKey ? 'Ctrl-' : '') + event.key;
+			if( this.keyDef[key] ) {
+				let preventDefault = this.keyDef[key](this.target,1,event);
+				if( preventDefault !== false ) {
+					event.preventDefault();
+				}
 			}
 		}
 		let onKeyUp = (event)=>{
-			if( this.keyDef[event.key] ) {
-				this.keyDef[event.key](this.target,0);
-				event.preventDefault();
+			if( event.key == 'Control' ) return;
+			let key = (event.ctrlKey ? 'Ctrl-' : '') + event.key;
+			if( this.keyDef[key] ) {
+				let preventDefault = this.keyDef[key](this.target,0,event);
+				if( preventDefault !== false ) {
+					event.preventDefault();
+				}
 			}
 		}
 		window.addEventListener('keydown',onKeyDown);

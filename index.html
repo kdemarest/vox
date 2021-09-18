@@ -38,6 +38,7 @@
 <script src="js/dataMason.js" charset="utf-8"></script>
 <script src="js/dataSeedTile.js" charset="utf-8"></script>
 <script src="js/dataSeedBlock.js" charset="utf-8"></script>
+<script src="js/dataBlocks.js" type="text/javascript"></script>
 <script src="js/dataSeed.js" charset="utf-8"></script>
 <script src="js/map2d.js" charset="utf-8"></script>
 <script src="js/map3d.js" charset="utf-8"></script>
@@ -51,11 +52,11 @@
 
 
 <script src="js/textureWriter.js" type="text/javascript"></script>
+<script src="js/textureAtlas.js" type="text/javascript"></script>
 <script src="js/textureRepo.js" type="text/javascript"></script>
 <script src="js/config.js" type="text/javascript"></script>
 <script src="js/light.js" type="text/javascript"></script>
 <script src="js/world.js" type="text/javascript"></script>
-<script src="js/blocks.js" type="text/javascript"></script>
 <script src="js/helpers.js" type="text/javascript"></script>
 <script src="js/pickBlock.js" type="text/javascript"></script>
 <script src="js/render.js" type="text/javascript"></script>
@@ -64,13 +65,14 @@
 <script src="js/viewMaterial.js" type="text/javascript"></script>
 <script src="js/entity.js" type="text/javascript"></script>
 <script src="js/player.js" type="text/javascript"></script>
+<script src="js/playerControls.js" type="text/javascript"></script>
 <script src="js/game.js" type="text/javascript"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
 
 </head>
 
-<body oncontextmenu="return false">
+<body>
 <!-- Render surface -->
 <canvas id="renderSurface"></canvas>
 
@@ -81,90 +83,6 @@
 
 <!-- Initialisation code -->
 <script type="text/javascript">
-
-Module.add( 'playerControls', ()=> {
-
-	class PlayerControls extends Controls {
-		constructor(canvas,player) {
-			super(canvas,player);
-
-			this.addListener();
-			this.pointerLock();
-			this.keyDef['Tab'] = (target,value) => {
-				if( !value ) return;
-				if( this.isPointerLocked ) {
-					this.pointerUnlock();
-				}
-				else {
-					this.pointerLock();
-				}
-			}
-			this.keyDef['g'] = this.keyDef['G'] =	(target,value) => { if( value ) target.collide = !target.collide; }
-			this.keyDef['r'] = this.keyDef['R'] =	(target,value) => { target.up = value; }
-			this.keyDef['f'] = this.keyDef['F'] =	(target,value) => { target.up = -value; }
-
-			this.keyDef['w'] = this.keyDef['W'] =	(target,value) => { target.forward = value; }
-			this.keyDef['s'] = this.keyDef['S'] =	(target,value) => { target.forward = -value; }
-			this.keyDef['a'] = this.keyDef['A'] =	(target,value) => { target.sideways = value; }
-			this.keyDef['d'] = this.keyDef['D'] =	(target,value) => { target.sideways = -value; }
-			this.keyDef['c'] = this.keyDef['C'] =	(target,value) => {
-				if( value ) {
-					if( target.crawl && !target.mayExitCrawl() ) {
-						return;
-					}
-
-					if( target.crouch ) { target.crawl = true; target.crouch = false; }
-					else { target.crawl = false; target.crouch = true; }
-				}
-			}
-			this.keyDef[' '] = (target,value) => {
-				console.log('space pressed='+value);
-				if( value ) {
-					if( target.crawl && !target.mayExitCrawl() ) {
-						return;
-					}
-
-					target.crouch = false;
-					target.crawl = false;
-					target.jump = true;
-				}
-			}
-			this.keyDef['Shift'] = (target,value) => {
-				if( !target.sprint && target.crouch ) {
-					target.crouch = false;
-				}
-				if( !target.sprint && target.crawl ) {
-					if( !target.mayExitCrawl() ) {
-						return;
-					}
-					target.crawl = false;
-				}
-				target.sprint = target.crouch || target.crawl ? false : !!value;
-			}
-			this.mouseDef.move = (target,dx,dy) => {
-				target.addYaw(dx);
-				target.addPitch(-dy);
-			}
-			this.mouseDef.click = (target,rmb) => {
-				target.doBlockAction(
-					canvas.width/2,
-					canvas.height/2,
-					!rmb,
-					(...args) => {
-						let r = canvas.renderer;
-						r.pickBlock.setup( r.viewMatrix, r.projMatrix, r.modelMatrix );
-						return r.pickBlock.pickAt(r.world, ...args);
-					}
-				);
-			}
-		}
-	}
-
-	return {
-		PlayerControls: PlayerControls
-	}
-
-});
 
 let consoleLog = console.log;
 let consoleCount = 10000;
@@ -251,7 +169,7 @@ async function main(){
 	}
 
 	window.IMG_BASE = "media/";
-	let pseudoRandomSeed = 2622;
+	let pseudoRandomSeed = 21890;
 	let flogueConfigEnvVariableId = 'flogueConfigId';
 
 	window.openGl = new OpenGl( "renderSurface" );
@@ -280,13 +198,13 @@ async function main(){
 //	mapMaker.makeIntoWorld(world);
 
 	let pathControls = {
-		rgDist: new Roller.Range(12,30,'intRange'),
-		ctRise: new Roller.ChanceTo(10),
-		ctFall: new Roller.ChanceTo(10),
-		rgWidth: new Roller.Range(0,1,'intRange',3,2),
-		lightSpacing: 16,
+		rgDist: new Roller.Range(5,22,'intRange'),
+		ctRise: new Roller.ChanceTo(20),
+		ctFall: new Roller.ChanceTo(40),
+		rgWidth: new Roller.Range(0,2,'intBell',1,2),
+		lightSpacing: 12,
 	}
-	let wright = new Wright().init( 16*8, 16*8, 16*8, pathLength=30*8, pathControls );
+	let wright = new Wright().init( 24*8, 24*8, 24*8, pathLength=70*8, pathControls );
 
 	world.init(wright.map3d.xLen,wright.map3d.yLen,wright.map3d.zLen);
 	world.createFlatWorld( 30 );	// dirt below, air above.
@@ -317,7 +235,7 @@ async function main(){
 		player.body.update();
 		
 		// Build a chunk
-		render.buildChunks( 1 );
+		render.buildChunks( 10);
 		//render.buildWorld();
 		
 		// Draw world

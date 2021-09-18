@@ -22,10 +22,11 @@ let SeedBrushPaletteDefault = function() {
 };
 
 class SeedBrush {
-	constructor(seed,putFn) {
+	constructor(seed,getFn,putFn) {
 		console.assert(seed);
 		console.assert( typeof putFn === 'function' );
 		this.seed    = seed;
+		this.getFn   = getFn;
 		this.putFn   = putFn;
 		this.setPalette({});
 		this.xCursor = null;
@@ -67,6 +68,14 @@ class SeedBrush {
 		return this;
 	}
 
+	get(z) {
+		return this.getFn(
+			this.xCursor,
+			this.yCursor,
+			this.zCursor + z
+		);
+	}
+
 	put(z,seedBlock) {
 		console.assert( seedBlock && seedBlock instanceof SeedBlock );
 		console.assert( Number.isInteger(z) );
@@ -82,9 +91,21 @@ class SeedBrush {
 
 	fill(_z0,_z1,seedBlock) {
 		console.assert( seedBlock && seedBlock instanceof SeedBlock );
+		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
 		let z0 = Math.min(_z0,_z1);
 		let z1 = Math.max(_z0,_z1);
 		for( let z=z0 ; z<z1 ; ++z ) {
+			this.put(z,seedBlock);
+		}
+		return this;
+	}
+
+	fillUntilKnown(_z0,_z1,seedBlock) {
+		console.assert( seedBlock && seedBlock instanceof SeedBlock );
+		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
+		let z0 = Math.min(_z0,_z1);
+		let z1 = Math.max(_z0,_z1);
+		for( let z=z0 ; z<z1 && this.get(z).isUnknown ; ++z ) {
 			this.put(z,seedBlock);
 		}
 		return this;
@@ -96,7 +117,7 @@ class SeedBrush {
 
 		if( seedTile === null || seedTile.isUnknown ) {
 			if( this.distCursor <=0 ) {
-				this.fill( seed.zDeep, -1, this.bWall );
+				this.fillUntilKnown( seed.zDeep, seed.zTall, this.bWall );
 			}
 			return this;
 		}
@@ -128,6 +149,12 @@ class SeedBrush {
 		}
 		if( symbol == '*' ) {
 			this.put( 1, this.bLight );
+		}
+		if( symbol == '2' ) {
+			this.put( 2, this.bLight );
+		}
+		if( symbol == '3' ) {
+			this.put( 3, this.bLight );
 		}
 		if( symbol == 'r' ) {
 			this.put( this.zTall-1, this.bLight );

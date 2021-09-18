@@ -244,13 +244,13 @@ Module.add('dataWright',function() {
 					let x = this.x + ahead.x*d - right.x*iOffset[i];
 					let y = this.y + ahead.y*d - right.y*iOffset[i];
 					let block = map3d.getBlock( x, y, this.z );
-					if( !(block.isUnknown || block.isWall==allowWall) ) {
+					if( !map3d.contains(x,y,this.z) || !(block.isUnknown || block.isWall==allowWall) ) {
 						lateralLimit = Math.abs( iOffset[i] );
 						break;
 					}
 					i += 1;
 				}
-				reach[d] = lateralLimit
+				reach[d] = Math.max(0,lateralLimit*2-1);
 			}
 			return reach;
 		}
@@ -352,10 +352,13 @@ Module.add('dataWright',function() {
 		init(map3d,pathLength,pathControls) {
 			this.map3d = map3d;
 			// set( x, y, z, facing, dist, width, loft, slope )
-			this.head.set( this.map3d.xMin+1, this.map3d.yHalf, this.map3d.zHalf, Dir.EAST, 0, 3, 5, 0 );
+			let aLittleDistanceToAllowStubs = 4;
+			this.head.set( this.map3d.xMin+aLittleDistanceToAllowStubs, this.map3d.yHalf, this.map3d.zHalf, Dir.EAST, 0, 3, 5, 0 );
 			this.facingForbidden = Dir.reverse(this.head.facing);
 			this.pathControls = Object.assign( new PathControls().setDefaults(), pathControls );
 			this.remaining    = pathLength;
+			this.seedPriorityList = Object.values(SeedType);
+			Array.shuffle(this.seedPriorityList);
 			return this;
 		}
 		findSafeTurn(facing) {
@@ -510,56 +513,72 @@ Module.add('dataWright',function() {
 				// Repeating with periodicity 4, 6, 8, or 10... on one side or both
 				[0.5],
 				[0.5,'across'],
-				[0.25,0.75],
-				[0.25,'across',0.75,'across']
+				[0.33,0.66],
+				[0.33,'across',0.66,'across']
 			];
 			let symmetric = Rand.chance100(50);
 
 			let stubLayout = [];
 
-
 			// WARNING!!! THIS IS VERY HARD CODED. It should be responsive to head dist...
-			let max = head.dist > 12 ? 4 : 2;
+			let max = head.dist > 16 ? 4 : 2;
 			let layoutType = StubLayoutType[ Rand.intRange( 0, max ) ];
 			let cursorIndex = null;
 			layoutType.forEach( n => {
 				let isAcross = false;
-				if( typeof n == 'number' ) {
+				if( Number.isFinite(n) ) {
 					cursorIndex = Math.floor(stubCandidate.length/2);
 				}
 				else
 				if( n == 'across' ) {
-					cursorIndex += 1;
+					cursorIndex += stubCandidate[cursorIndex+1].x == stubCandidate[cursorIndex].x || stubCandidate[cursorIndex+1].y == stubCandidate[cursorIndex].y ? 1 : -1;
 					isAcross = true;
 				}
-				let stub = stubCandidate[cursorIndex];
-				stub.symmetric = isAcross && symmetric;
+				let stub = Object.assign( {}, stubCandidate[cursorIndex] );
+				stub.index = cursorIndex;
+				stub.symmetric = !isAcross && symmetric;
+				stub.across = isAcross;
 				stubLayout.push( stub );
 			});
 			return stubLayout;
+		}
+
+		getBlock(x,y,z,block)  {
+			return this.map3d.getBlock( x, y, z );
+		}
+
+		setBlock(x,y,z,block) {
+			return this.map3d.setVal( x, y, z, block );
 		}
 
 
 		buildStubs() {
 
 			let stubLayout = this.makeStubLayout( this.zone.stubCandidate, this.head );
-			let lastStub = null;
+			let preferSeed = null;
 
 			for( let index = 0 ; index < stubLayout.length ; ++index ) {
-				let sc = stubLayout[index];
-				let rakeReach = (new RakeReach()).set( sc.facing, sc.x, sc.y, sc.z );
+				let stub = stubLayout[index];
+				let rakeReach = (new RakeReach()).set( stub.facing, stub.x, stub.y, stub.z );
 				let reach = rakeReach.detect(this.map3d);
-				let seedList = Object.values(SeedType).filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
-				console.log('picking from '+seedList.length+' seeds.' );
+				let seedList = this.seedPriorityList.filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
+
+				//console.log('picking from '+seedList.length+' seeds.' );
 				if( seedList.length <= 0 ) {
 					return false;
 				}
-				let seed = seedList[ Rand.intRange(0,seedList.length-1) ];
-			//seed = SeedType.PIT_ALCOVE;
+				let seed = seedList[0];
+				if( preferSeed && seedList.find( s => s.id==preferSeed.id ) ) {
+					seed = preferSeed;
+				}
+				// Now, since we just used this seed, yank it out of the array and jam it at the end.
+				let seedIndex = this.seedPriorityList.find( curSeed => curSeed.id == seed.id );
+				this.seedPriorityList.splice(seedIndex,1);
+				this.seedPriorityList.push(seed);
 
-				let seedBrush = new SeedBrush(seed, (x,y,z,block) => {
-					this.map3d.setVal( x, y, z, block );
-				});
+			//seed = SeedType.UNDER_SHELF;
+
+				let seedBrush = new SeedBrush( seed, this.getBlock.bind(this), this.setBlock.bind(this) );
 
 				seedBrush.setPalette({});
 
@@ -576,10 +595,17 @@ Module.add('dataWright',function() {
 						.stroke( seedTile )
 						.markup( seedMarkup );
 					;
-	//				if( sx == 1 && sy == 1 ) {
-	//					this.map3d.setVal(x,y,zOrigin+1,SeedBlockType.LIGHT);
-	//				}
 				});
+
+				preferSeed = !stub.across && (seed.symmetric || stub.symmetric) ? seed : null;
+				if( preferSeed && (index+1 >= stubLayout.length || !stubLayout[index+1].across) ) {
+					let stubCan = this.zone.stubCandidate;
+					let symIndex = stub.index + (stubCan[stub.index+1].x == stubCan[stub.index].x || stubCan[stub.index+1].y == stubCan[stub.index].y ? 1 : -1);
+					let symStub = Object.assign( {}, stubCan[symIndex] );
+					symStub.index = symIndex;
+					symStub.across = true;
+					stubLayout.splice( index+1, 0, symStub );
+				}
 			}
 		}
 

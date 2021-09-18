@@ -19,6 +19,7 @@ SeedData.CANDLE_NICHE = {
 	hasRoof: false,
 	zTall: 2,
 	isStub: true,
+	symmetric: true,
 }
 
 SeedData.SMALL_CHAMBER = {
@@ -173,16 +174,16 @@ SeedData.COLUMNS_AND_THRONE = {
 	textMap:
 `
         #     #
-# # # # #*# # #*# # # #
+# # # # #3# # #3# # # #
 # . . . . s s . . . . #
 # . . . . s s . . . . #
-#*. . O . d d . O . . #*
+# . . O . d d . O . . #
 # . . . . . . . . . . #
 # . . . . . . . . . . #
-#*. . O . . . . O . . #*
+# . . O .2. . .2O . . #
 # . . . . . . . . . . #
 # . . . . . . . . . . #
-#*. . O . . . . O . . #*
+# . . O .2. . .2O . . #
 # . . . . . . . . . . #
 # . . . . . . . . . . #
           . . 
@@ -193,11 +194,23 @@ SeedData.COLUMNS_AND_THRONE = {
 SeedData.TUNNEL_UTURN = {
 	textMap:
 `
-# # # # # #
-# t t t t #
-# t # # t #
-# t # # t #
-  t     t
+    # # #
+# # # #f# # #
+# t t t t t #
+# t # t # t #
+# t # # # t #
+  t       t
+`,
+	isStub: true
+}
+
+SeedData.UNDER_SHELF = {
+	textMap:
+`
+# # # # #
+# t t t #
+# t t t #
+  t t t
 `,
 	isStub: true
 }
@@ -206,10 +219,12 @@ SeedData.TUNNEL_UTURN = {
 SeedData.WALL_TABLE = {
 	textMap:
 `
-s s*s
+  #
+# #*#
+d d d
 `,
-	isDecor: true,
-	againstWall: true,
+	isStub: true,
+	symmetric: true,
 }
 
 
