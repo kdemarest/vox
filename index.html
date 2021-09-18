@@ -169,7 +169,7 @@ async function main(){
 	}
 
 	window.IMG_BASE = "media/";
-	let pseudoRandomSeed = 21890;
+	let pseudoRandomSeed = Random.True.intRange(0,100000);
 	let flogueConfigEnvVariableId = 'flogueConfigId';
 
 	window.openGl = new OpenGl( "renderSurface" );
@@ -201,6 +201,8 @@ async function main(){
 		rgDist: new Roller.Range(5,22,'intRange'),
 		ctRise: new Roller.ChanceTo(20),
 		ctFall: new Roller.ChanceTo(40),
+		ctRoof: new Roller.ChanceTo(20),
+		rgRoof: new Roller.Range(2,7,'intBell'),
 		rgWidth: new Roller.Range(0,2,'intBell',1,2),
 		lightSpacing: 12,
 	}

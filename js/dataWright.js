@@ -148,6 +148,8 @@ Module.add('dataWright',function() {
 		setDefaults() {
 			this.rgDist      = new Roller.Range(2,20,'intBell');
 			this.ctTurn      = new Roller.ChanceTo(50);
+			this.ctRoof		 = new Roller.ChanceTo(20);
+			this.rgRoof		 = new Roller.Range(2,7,'intBell');
 			this.ctRise      = new Roller.ChanceTo(30);
 			this.ctFall      = new Roller.ChanceTo(30);
 			this.rgSlope     = new Roller.Often(50,1,new Roller.Range(1/4,1,'floatRange'));
@@ -388,6 +390,8 @@ Module.add('dataWright',function() {
 			let turn      = p.ctTurn.test();
 			let slopeMult = (p.ctRise.test() && lastSlope >=0) ? 1 : (p.ctFall.test() && lastSlope<=0) ? -1 : 0;
 			let slope     = p.rgSlope.roll() * slopeMult;
+			let loft      = p.ctRoof.test() ? p.rgRoof.roll() : head.loft;
+
 
 			let width;
 			if( !turn ) {
@@ -408,6 +412,7 @@ Module.add('dataWright',function() {
 			head.dist   = dist;
 			head.turn   = turn;
 			head.width  = width;
+			head.loft   = loft;
 			head.slope  = slope;
 			// Note that head.facing does not change yet.
 

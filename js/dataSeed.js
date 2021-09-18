@@ -215,6 +215,18 @@ SeedData.UNDER_SHELF = {
 	isStub: true
 }
 
+SeedData.SYM_PIT = {
+	textMap:
+`
+# # # # # # # # #
+# p p p prp p p #
+  p p p p p p p 
+`,
+	isStub: true,
+	zDeep: -5,
+	symmetric: true,
+}
+
 
 SeedData.WALL_TABLE = {
 	textMap:
