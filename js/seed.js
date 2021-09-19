@@ -22,10 +22,11 @@ let SeedBrushPaletteDefault = function() {
 };
 
 class SeedBrush {
-	constructor(seed,getFn,putFn) {
+	constructor(seed,head,getFn,putFn) {
 		console.assert(seed);
 		console.assert( typeof putFn === 'function' );
 		this.seed    = seed;
+		this.head    = head;
 		this.getFn   = getFn;
 		this.putFn   = putFn;
 		this.setPalette({});
@@ -46,7 +47,7 @@ class SeedBrush {
 	}
 
 	get setUpon() {
-		for( let i=0 ; i<this.zTall ; ++i ) {
+		for( let i=this.zDeep ; i<this.zTall ; ++i ) {
 			if( this.vertical[i].isAir ) {
 				return i;
 			}
@@ -89,26 +90,38 @@ class SeedBrush {
 		return this;
 	}
 
-	fill(_z0,_z1,seedBlock) {
+	putWeak(z,seedBlock) {
+		if( this.get(z).isUnknown ) {
+			this.put(z,seedBlock);
+		}
+	}
+
+	_fill(_z0,_z1,seedBlock,weak=false,stopAtKnown=false) {
 		console.assert( seedBlock && seedBlock instanceof SeedBlock );
 		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
 		let z0 = Math.min(_z0,_z1);
 		let z1 = Math.max(_z0,_z1);
 		for( let z=z0 ; z<z1 ; ++z ) {
-			this.put(z,seedBlock);
+			if( !weak || this.get(z).isUnknown ) {
+				this.put(z,seedBlock);
+			}
+			else if( stopAtKnown ) {
+				break;
+			}
 		}
 		return this;
 	}
 
+	fill(_z0,_z1,seedBlock) {
+		return this._fill(_z0,_z1,seedBlock);
+	}
+
+	fillWeak( _z0,_z1,seedBlock) {
+		return this._fill(_z0,_z1,seedBlock,true);
+	}
+
 	fillUntilKnown(_z0,_z1,seedBlock) {
-		console.assert( seedBlock && seedBlock instanceof SeedBlock );
-		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
-		let z0 = Math.min(_z0,_z1);
-		let z1 = Math.max(_z0,_z1);
-		for( let z=z0 ; z<z1 && this.get(z).isUnknown ; ++z ) {
-			this.put(z,seedBlock);
-		}
-		return this;
+		return this._fill(_z0,_z1,seedBlock,true,true);
 	}
 
 	stroke(seedTile) {
@@ -118,6 +131,7 @@ class SeedBrush {
 		if( seedTile === null || seedTile.isUnknown ) {
 			if( this.distCursor <=0 ) {
 				this.fillUntilKnown( seed.zDeep, seed.zTall, this.bWall );
+				this.fill( this.head.loft, seed.zTall, this.bWall );
 			}
 			return this;
 		}
@@ -150,11 +164,8 @@ class SeedBrush {
 		if( symbol == '*' ) {
 			this.put( 1, this.bLight );
 		}
-		if( symbol == '2' ) {
-			this.put( 2, this.bLight );
-		}
-		if( symbol == '3' ) {
-			this.put( 3, this.bLight );
+		if( symbol >= '0' && symbol <= '9' ) {
+			this.put( parseInt(symbol), this.bLight );
 		}
 		if( symbol == 'r' ) {
 			this.put( this.zTall-1, this.bLight );

@@ -83,6 +83,23 @@ SeedData.POOL_MD = {
 	isStub: true,
 }
 
+SeedData.POOL_LG = {
+	textMap:
+`
+    # # # #
+  # w w w w #
+# w w w w w w #
+# w w wrw w w #
+# w w w w w w #
+# w w w w w w #
+  # w w w w #
+      .
+`,
+	isStub: true,
+	zDeep: -4,
+	zTall: 3,
+}
+
 SeedData.COOL_DRINK = {
 	textMap:
 `
@@ -237,6 +254,66 @@ d d d
 `,
 	isStub: true,
 	symmetric: true,
+}
+
+SeedData.ATTIC = {
+	textMap:
+`
+      # # #
+# # # # #6# #
+# 5 5 5 5 5 # #
+# 4 5 5 5 5 #2#
+# 3 5 5 5 5 # #
+# 2 1 . . . #
+# # # . . . #
+`,
+	isStub: true,
+	zTall: 9,
+	hollowBelow: true,
+}
+
+SeedData.BASEMENT = {
+	textMap:
+`
+  # # # # # # # #
+  # 1 1 1 2 3 3 #
+  # 1 1 1 2 3 3 #
+# 2s1 1 1 1 4 4 #
+  # 1 1 1 1 5 5 #
+  # # w # # . . #
+`,
+	isStub: true,
+	zDeep: -4,
+	hollowBelow: true,
+	altitudeShift: -5,
+}
+
+SeedData.BALCONY = {
+	textMap:
+`
+      #
+# # # 44# #
+# . 1 2 3 #
+# t 3 3 3 #
+# t 3 3 3 #
+`,
+	isStub: true,
+	zTall: 5,
+}
+
+SeedData.MURDER_HOLE = {
+	textMap:
+`
+      #
+# # # 11# # #
+# . . . . . #
+# . . . . . #
+# ^ # ^ # ^ #
+`,
+	isStub: true,
+	palette: {
+		bWindow: SeedBlockType.AIR
+	}
 }
 
 

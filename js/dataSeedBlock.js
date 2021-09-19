@@ -36,7 +36,7 @@ let SeedBlockData = {
 	},
 	WINDOW: {
 		isWindow: true,
-		toBlock: 'WINDOW',
+		toBlock: 'GLASS',
 	},
 	FLUID: {
 		isFluid: true,

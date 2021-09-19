@@ -85,9 +85,29 @@ Module.add('dataSeedTile',function(extern) {
 			isWindow: true,
 			render: brush => {
 				brush.put(1,brush.bWindow);
+				brush.fill(brush.zDeep,1,brush.bWall);
+				brush.fill(2,brush.zTall,brush.bWall);
 			}
 		},
 	}
+
+let heights = ['0','1','2','3','4','5','6','7','8','9'];
+heights.forEach( symbol => {
+	let _altitude = parseInt(symbol)-1;
+	SeedTileData[symbol] = {
+		symbol: symbol,
+		isFloor: true,
+		render: brush => {
+			let altitudeShift = brush.seed.altitudeShift || 0;
+			let altitude = _altitude + altitudeShift;
+			brush.fill(brush.zDeep,altitude,brush.seed.hollowBelow ? brush.bTall : brush.bWall);
+			brush.put(altitude,brush.bFloor);
+			if( this.distCursor <= 0 ) {
+				brush.fill(altitude+1,altitude+4,brush.bTall);
+			}
+		}
+	}
+});
 
 return {
 	SeedTileData: SeedTileData,

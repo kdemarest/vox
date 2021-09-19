@@ -581,9 +581,9 @@ Module.add('dataWright',function() {
 				this.seedPriorityList.splice(seedIndex,1);
 				this.seedPriorityList.push(seed);
 
-			//seed = SeedType.UNDER_SHELF;
+			//seed = SeedType.POOL_LG;
 
-				let seedBrush = new SeedBrush( seed, this.getBlock.bind(this), this.setBlock.bind(this) );
+				let seedBrush = new SeedBrush( seed, this.head, this.getBlock.bind(this), this.setBlock.bind(this) );
 
 				seedBrush.setPalette({});
 
