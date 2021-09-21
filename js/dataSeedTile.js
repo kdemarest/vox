@@ -35,15 +35,22 @@ Module.add('dataSeedTile',function(extern) {
 				brush.put(brush.zDeep-1,brush.bBase);
 			}
 		},
-		COLUMN: {
+		SUPPORT: {
 			symbol: 'O',
+			isSupport: true,
+			render: brush => {
+				brush.fill(brush.zDeep,brush.zTall,brush.bSupport);
+			}
+		},
+		COLUMN: {
+			symbol: 'o',
 			isColumn: true,
 			render: brush => {
 				brush.fill(brush.zDeep,brush.zTall,brush.bColumn);
 			}
 		},
 		POST: {
-			symbol: 'o',
+			symbol: '|',
 			isPost: true,
 			render: brush => {
 				brush.fill(brush.zDeep,brush.zTall,brush.bPost);
@@ -53,7 +60,7 @@ Module.add('dataSeedTile',function(extern) {
 			symbol: ',',
 			isSlab: true,
 			render: brush => {
-				brush.fill(brush.zDeep,brush.zTall,brush.bSlab);
+				brush.put(0,brush.bSlab);
 			}
 		},
 		DIAS: {

@@ -393,6 +393,7 @@ Module.add('dataWright',function() {
 
 			for( let index = 0 ; index < stubLayout.length ; ++index ) {
 				let stub = stubLayout[index];
+				//debugger;
 				let rakeReach = (new RakeReach()).set( stub.facing, stub.x, stub.y, stub.z );
 				let reach = rakeReach.detect(this.map3d);
 				let seedList = this.seedPriorityList.filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
@@ -410,7 +411,7 @@ Module.add('dataWright',function() {
 				this.seedPriorityList.splice(seedIndex,1);
 				this.seedPriorityList.push(seed);
 
-			//seed = SeedType.POOL_LG;
+			//seed = SeedType.TEST;
 
 				let seedBrush = new SeedBrush( seed, this.head, this.getBlock.bind(this), this.setBlock.bind(this) );
 

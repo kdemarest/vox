@@ -312,7 +312,7 @@ SeedData.MURDER_HOLE = {
 `,
 	isStub: true,
 	palette: {
-		bWindow: BlockType.AIR
+		bWindow: 'AIR'
 	}
 }
 
@@ -321,9 +321,9 @@ SeedData.TEST = {
 `
 # # # # # #
 # s s . o #
-# . . . = #
-# , . . = #
-# , . . = #
+# p p = p #
+# , p = p #
+# , p = p #
 `,
 	isStub: true,
 	zTall: 5,

@@ -136,6 +136,12 @@ BlockData.STONE_SLAB = {
 	textureStem: ['block/stone_bricks.png'],
 };
 
+BlockData.COLUMN = {
+	transparent: true,
+	indent: [ 0, 1, 2/16, 14/16, 2/16, 14/16 ],
+	textureStem: ['block/polished_andesite.png'],
+};
+
 BlockData.POST = {
 	transparent: true,
 	indent: [ 0/16, 16/16, 7/16, 9/16, 7/16, 9/16 ],
@@ -271,6 +277,7 @@ let BlockType = new class {
 BlockType.initFromData(BlockData);
 
 return {
+	Block: Block,
 	BlockType: BlockType,
 	BlockDir: BlockDir
 }

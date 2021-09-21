@@ -6,35 +6,23 @@ Module.add('painter',function() {
 			bDeepFill:	'AIR',
 			bPitFill:	'AIR',
 			bBase:		'STONE',
-			bFloor:		'STONE',
+			bFloor:		'WOOD',
 			bRoof:		'STONE',
 			bWall:		'STONE',
 			bDoor: 		'AIR',
 			bPost:		'POST',
 			bSlab:		'STONE_SLAB',
 			bDias:		'PLANK',
-			bShelf:		'PLANK',
+			bShelf:		'SHELF',
 			bBridge:	'BRIDGE',
 			bTunnel:	'AIR',
 			bWindow:	'GLASS',
-			bColumn:	'STONE',
+			bSupport:	'STONE',
+			bColumn:	'COLUMN',
 			bFluid:		'WATER',
 			bLight:		'TORCH',
 		}
 	};
-/*
-	class PaintPalette {
-		constructor() {
-			this.id = null;
-			Object.assign( this, PaintPaletteDefault() );			
-		}
-		initFromData(key,value) {
-			this.id = key;
-			Object.assign( this, value );
-			return this;
-		}
-	}
-*/
 
 	class PaintCursor {
 		constructor() {

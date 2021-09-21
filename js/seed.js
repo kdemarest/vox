@@ -23,7 +23,7 @@ class SeedBrush {
 	get zFluid() { return this.seed.zFluid; }
 
 	get paletteDefault() {
-		return SeedBrushPaletteDefault();
+		return PaintPaletteDefault();
 	}
 
 	get setUpon() {
@@ -57,7 +57,8 @@ class SeedBrush {
 		);
 	}
 
-	put(z,block) {
+	put(z,blockId) {
+		let block = BlockType[blockId];
 		console.assert( block && block instanceof Block );
 		console.assert( Number.isInteger(z) );
 		this.vertical[z] = block;
@@ -70,20 +71,20 @@ class SeedBrush {
 		return this;
 	}
 
-	putWeak(z,block) {
+	putWeak(z,blockId) {
 		if( this.get(z).isUnknown ) {
-			this.put(z,block);
+			this.put(z,blockId);
 		}
 	}
 
-	_fill(_z0,_z1,block,weak=false,stopAtKnown=false) {
-		console.assert( block && block instanceof Block );
+	_fill(_z0,_z1,blockId,weak=false,stopAtKnown=false) {
+		console.assert( BlockType[blockId] );
 		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
 		let z0 = Math.min(_z0,_z1);
 		let z1 = Math.max(_z0,_z1);
 		for( let z=z0 ; z<z1 ; ++z ) {
 			if( !weak || this.get(z).isUnknown ) {
-				this.put(z,block);
+				this.put(z,blockId);
 			}
 			else if( stopAtKnown ) {
 				break;
@@ -92,16 +93,16 @@ class SeedBrush {
 		return this;
 	}
 
-	fill(_z0,_z1,block) {
-		return this._fill(_z0,_z1,block);
+	fill(_z0,_z1,blockId) {
+		return this._fill(_z0,_z1,blockId);
 	}
 
-	fillWeak( _z0,_z1,block) {
-		return this._fill(_z0,_z1,block,true);
+	fillWeak( _z0,_z1,blockId) {
+		return this._fill(_z0,_z1,blockId,true);
 	}
 
-	fillUntilKnown(_z0,_z1,block) {
-		return this._fill(_z0,_z1,block,true,true);
+	fillUntilKnown(_z0,_z1,blockId) {
+		return this._fill(_z0,_z1,blockId,true,true);
 	}
 
 	stroke(seedTile) {
@@ -187,12 +188,7 @@ let Seed = class {
 
 		if( this.palette ) {
 			for( let key in this.palette ) {
-				let entry = this.palette[key];
-				if( typeof entry == 'string' ) {
-					debugger;
-					console.assert( BlockType[entry] );
-					this.palette[key] = BlockType[entry];
-				}
+				console.assert( BlockType[ this.palette[key] ] );
 			}
 		}
 

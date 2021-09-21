@@ -115,7 +115,7 @@ Module.add('rake',function() {
 					let x = this.x + ahead.x*d - right.x*iOffset[i];
 					let y = this.y + ahead.y*d - right.y*iOffset[i];
 					let block = map3d.getBlock( x, y, this.z );
-					if( !map3d.contains(x,y,this.z) || !(block.isUnknown || block.isWall==allowWall) ) {
+					if( !map3d.contains(x,y,this.z) || !(block.isUnknown || allowWall) ) {
 						lateralLimit = Math.abs( iOffset[i] );
 						break;
 					}
