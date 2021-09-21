@@ -10,13 +10,14 @@ Module.add('dataSeedTile',function(extern) {
 			isFloor: true,
 			render: brush => {
 				brush.put(-1,brush.bFloor);
+				brush.fill(0,brush.zTall,brush.bTallFill);
 			}
 		},
 		WALL: {
 			symbol: '#',
 			isWall: true,
 			render: brush => {
-				brush.fill(brush.zDeep,brush.zTall,brush.bWall);
+				brush.fillPassable(brush.zDeep,brush.zTall,brush.bWall);
 			}
 		},
 		DOOR: {
@@ -24,7 +25,8 @@ Module.add('dataSeedTile',function(extern) {
 			isDoor: true,
 			render: brush => {
 				brush.put(-1,brush.bFloor);
-				brush.fill(0,1,brush.bDoor);
+				brush.fill(0,brush.zDoor,brush.bDoor);
+				brush.fillPassable(brush.zDoor,brush.zTall,brush.bWall);
 			}
 		},
 		PIT: {
@@ -32,6 +34,7 @@ Module.add('dataSeedTile',function(extern) {
 			isPit: true,
 			render: brush => {
 				brush.fill(brush.zDeep,0,brush.bPitFill);
+				brush.fill(0,brush.zTall,brush.bTallFill);
 				brush.put(brush.zDeep-1,brush.bBase);
 			}
 		},
@@ -60,37 +63,47 @@ Module.add('dataSeedTile',function(extern) {
 			symbol: ',',
 			isSlab: true,
 			render: brush => {
-				brush.put(0,brush.bSlab);
+				let zSlab = brush.zSlab || brush.seed.zSlab || 0;
+				brush.put(zSlab,brush.bSlab);
+				brush.fill(zSlab+1,brush.zTall,brush.bTallFill);
 			}
 		},
 		DIAS: {
 			symbol: 'd',
 			isDias: true,
 			render: brush => {
-				brush.put(0,brush.bDias);
+				let zDias = brush.zDias || brush.seed.zDias || 0;
+				brush.put(zDias,brush.bDias);
+				brush.fill(zDias+1,brush.zTall,brush.bTallFill);
 			}
 		},
 		SHELF: {
 			symbol: 's',
 			isShelf: true,
 			render: brush => {
-				brush.put(0,brush.bShelf);
-				brush.put(1,brush.bShelf);
+				let zShelf    = brush.zShelf || brush.seed.zShelf || 0;
+				let zShelfTop = brush.zShelfTop || brush.seed.zShelfTop || 2;
+				brush.fill(zShelf,zShelfTop,brush.bShelf);
+				brush.fill(zShelfTop,brush.zTall,brush.bTallFill);
 			}
 		},
 		BRIDGE: {
 			symbol: '=',
 			isBridge: true,
 			render: brush => {
-				brush.put(-1,brush.bBridge);
+				let zBridge = brush.zBridge || brush.seed.zBridge || -1;
+				brush.put(zBridge,brush.bBridge);
+				brush.fill(zBridge+1,brush.zTall,brush.bTallFill);
+
 			}
 		},
 		TUNNEL: {
 			symbol: 't',
 			isTunnel: true,
 			render: brush => {
-				brush.put(0,brush.bTunnel);
-				brush.fill(1,brush.zTall,brush.bWall);
+				let zTunnel = brush.zTunnel || brush.seed.zTunnel || 0;
+				brush.put(zTunnel,brush.bTunnel);
+				brush.fillPassable(zTunnel+1,brush.zTall,brush.bWall);
 			}
 		},
 		FLUID: {
@@ -98,6 +111,7 @@ Module.add('dataSeedTile',function(extern) {
 			isFluid: true,
 			render: brush => {
 				brush.fill(Math.min(-1,brush.zDeep),brush.zFluid+1,brush.bFluid);
+				brush.fill(brush.zFluid+2,brush.zTall,brush.bTallFill);
 				brush.put(Math.min(-1,brush.zDeep,brush.zFluid), brush.bFloor );
 			}
 		},
@@ -106,8 +120,8 @@ Module.add('dataSeedTile',function(extern) {
 			isWindow: true,
 			render: brush => {
 				brush.put(1,brush.bWindow);
-				brush.fill(brush.zDeep,1,brush.bWall);
-				brush.fill(2,brush.zTall,brush.bWall);
+				brush.fillPassable(brush.zDeep,1,brush.bWall);
+				brush.fillPassable(2,brush.zTall,brush.bWall);
 			}
 		},
 	}
@@ -121,7 +135,7 @@ heights.forEach( symbol => {
 		render: brush => {
 			let altitudeShift = brush.seed.altitudeShift || 0;
 			let altitude = _altitude + altitudeShift;
-			brush.fill(brush.zDeep,altitude,brush.seed.hollowBelow ? brush.bTallFill : brush.bWall);
+			brush.fillPassable(brush.zDeep,altitude,brush.seed.hollowBelow ? brush.bTallFill : brush.bWall);
 			brush.put(altitude,brush.bFloor);
 			if( this.distCursor <= 0 ) {
 				brush.fill(altitude+1,altitude+4,brush.bTallFill);

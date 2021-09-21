@@ -29,6 +29,7 @@ Module.add('painter',function() {
 			this.x = this.y = this.z = null;
 			this.u = this.v = this.w = null;
 			this.flags = 0;
+			this.painter = null;
 		}
 		set( x, y, z, u, v, w, flags ) {
 			this.x = x;
@@ -40,6 +41,7 @@ Module.add('painter',function() {
 			this.flags = flags;
 		}
 		get uGlobal() {
+			// Tells how far along you are overall, while .u only tells how far along the current hallway.
 			return this.painter.driver.remaining-this.u;
 		}
 	}
@@ -50,7 +52,10 @@ Module.add('painter',function() {
 		constructor(keyValuePairs) {
 			console.assert( !keyValuePairs.palette );	// Always use setPalette instead.
 			Object.assign( this, this.parametersDefault, keyValuePairs );
+			this.textureHash = {};	// a hash of named textures that the painter can use at will.
 		}
+		get parametersDefault()	{ return {}; }
+		get paletteDefault()	{ return {}; }
 		setCursor(cursor) {
 			this.cursor = cursor;
 			this.cursor.painter = this;
@@ -61,10 +66,35 @@ Module.add('painter',function() {
 			let palette = Object.assign( {}, PaintPaletteDefault(), this.paletteDefault || {}, _palette );
 			this.palette = palette;
 			for( let key in palette ) {
+				// Since there is no reliable way to detect whether a getter is already defined, but V8 can tell,
+				// just let it exception and ignore it.
 				if( !this[key] && typeof palette[key] === 'string' ) {
-					this[key] = palette[key];
+					try {
+						this[key] = palette[key];
+					} catch(e) {}
 				}
 			}
+		}
+		sample2d(textureName,u,v,uStride,vStride) {
+			if( !this.textureHash[textureName] ) {
+				let t = new TextMapParser( this[textureName].textMap );
+				let m = new Map2d(BlockType,'UNKNOWN').set(0,0,t.dimensions[0],t.dimensions[1]);
+				t.parse( (x,y,index,symbol) => {
+					let block = this[textureName].lookup[symbol];
+					console.assert(block);
+					m.setVal( x, y, block );
+				});
+				this.textureHash[textureName] = m;
+			}
+
+			let texture = this.textureHash[textureName];
+			// This business with adding uStride*10 just gets us out of the negative numbers,
+			// in case we're either below ground level, or before the start of the hall
+			let x = Math.floor( ((u+uStride*10) % uStride) / uStride * texture.xLen );
+			let y = Math.floor( ((v+vStride*10) % vStride) / vStride * texture.yLen );
+			console.assert( x >= 0 && x < texture.xLen );
+			console.assert( y >= 0 && y < texture.yLen );
+			return texture.getTile(x,y);
 		}
 	}
 

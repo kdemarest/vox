@@ -20,6 +20,7 @@ class SeedBrush {
 	get yLen() { return this.seed.yLen; }
 	get zTall() { return this.seed.zTall; }
 	get zDeep() { return this.seed.zDeep; }
+	get zDoor() { return this.seed.zDoor; }
 	get zFluid() { return this.seed.zFluid; }
 
 	get paletteDefault() {
@@ -71,22 +72,28 @@ class SeedBrush {
 		return this;
 	}
 
+	putOnPassable(z,blockId) {
+		if( this.get(z).passable ) {
+			this.put(z,blockId);
+		}
+	}
+
 	putWeak(z,blockId) {
 		if( this.get(z).isUnknown ) {
 			this.put(z,blockId);
 		}
 	}
 
-	_fill(_z0,_z1,blockId,weak=false,stopAtKnown=false) {
+	_fill(_z0,_z1,blockId,check=null,stopWhenBlocked=false) {
 		console.assert( BlockType[blockId] );
 		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
 		let z0 = Math.min(_z0,_z1);
 		let z1 = Math.max(_z0,_z1);
 		for( let z=z0 ; z<z1 ; ++z ) {
-			if( !weak || this.get(z).isUnknown ) {
+			if( !check || this.get(z)[check] ) {
 				this.put(z,blockId);
 			}
-			else if( stopAtKnown ) {
+			else if( stopWhenBlocked ) {
 				break;
 			}
 		}
@@ -98,11 +105,15 @@ class SeedBrush {
 	}
 
 	fillWeak( _z0,_z1,blockId) {
-		return this._fill(_z0,_z1,blockId,true);
+		return this._fill(_z0,_z1,blockId,'isUnknown');
+	}
+
+	fillPassable( _z0,_z1,blockId) {
+		return this._fill(_z0,_z1,blockId,'passable');
 	}
 
 	fillUntilKnown(_z0,_z1,blockId) {
-		return this._fill(_z0,_z1,blockId,true,true);
+		return this._fill(_z0,_z1,blockId,'isUnknown',true);
 	}
 
 	stroke(seedTile) {
@@ -129,10 +140,11 @@ class SeedBrush {
 		}
 
 		// Fill the top of the room with air
-		this.fill( 0, seed.zTall, this.bTallFill );
+		// Nope: let the tile figure this out instead.
+		//this.fill( 0, seed.zTall, this.bTallFill );
 
 		// Cap it with a roof
-		this.put( seed.zTall, this.bRoof );
+		this.putOnPassable( seed.zTall, this.bRoof );
 
 		//console.log(seedTile.id);
 		seedTile.render(this);

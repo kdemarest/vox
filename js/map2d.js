@@ -131,15 +131,16 @@ Module.add('map2d',function(extern) {
 
 
 	class Map2d extends Rect2d {
-		constructor(tileList) {
+		constructor(tileList,_unknown) {
 			super();
 			this.spot = [];
 			this.tile = tileList;
-			console.assert( this.tile && this.tile.UNKNOWN );
+			this.UNKNOWN = _unknown || this.tile.UNKNOWN;
+			console.assert( this.tile && this.UNKNOWN );
 		}
 		set(x,y,xLen,yLen) {
 			super.set(x,y,xLen,yLen);
-			this.fillWeak(this.tile.UNKNOWN);
+			this.fillWeak(this.UNKNOWN);
 			return this;
 		}
 		getVal(x,y,key=null) {
@@ -171,7 +172,7 @@ Module.add('map2d',function(extern) {
 		}
 		getTile(x,y) {
 			let tile = this.getVal(x,y,'tile');
-			return tile === undefined ? this.tile.UNKNOWN : tile || this.tile.UNKNOWN;
+			return tile === undefined ? this.UNKNOWN : tile || this.UNKNOWN;
 		}
 		getZoneId(x,y) {
 			let zoneId = this.getVal(x,y,'zoneId');
@@ -204,7 +205,7 @@ Module.add('map2d',function(extern) {
 		fillWeak(tile,zoneId) {
 			this.traverse( (x,y) => {
 				let tile = this.getTile(x,y);
-				if( !tile || tile.isUnknown ) {
+				if( !tile || tile==this.UNKNOWN ) {
 					this.setVal(x,y,tile,zoneId);
 				}
 			});
@@ -214,7 +215,7 @@ Module.add('map2d',function(extern) {
 			let extent = new Rect2d();
 			let any = false;
 			this.traverse( (x,y) => {
-				if( !this.getTile(x,y).isUnknown ) {
+				if( this.getTile(x,y) != this.UNKNOWN ) {
 					extent.extend(x,y);
 					any = true;
 				}

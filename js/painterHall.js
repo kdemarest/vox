@@ -27,18 +27,18 @@ Module.add('painterHall',function() {
 
 			blockId = this.bSpecial || blockId;
 
-			console.assert( BlockType[blockId] );
+			console.assert( BlockType[blockId] && blockId !== 'UNKNOWN' );
 			return BlockType[blockId];
 		}
 	}
 
 	Painter.HallStandard = class extends Painter.Hall {
-		get paletteDefault() { return {
+		get paletteDefault() { return Object.assign( {}, super.paletteDefault, {
 			bDefault:	'AIR',
 			bFloor:		'PLANK',
 			bRoof:		'DIRT',
 			bWall:		'DIRT',
-		}}
+		})}
 		get bWall()		{ return this.palette.bWall; }
 		get bStart()	{ return this.bWall; }
 		get bCorner()	{ return this.bWall; }
@@ -59,15 +59,15 @@ Module.add('painterHall',function() {
 	}
 
 	Painter.HallFancy = class extends Painter.HallStandard {
-		get parametersDefault() { return {
-			columnSpacing: 5,
+		get parametersDefault() { return Object.assign( {}, super.parametersDefault, {
+			columnSpacing: 500,
 			tileU: 1,
 			tileW: 1,
 			tileModulo: 2,
 			ctWallMossy: 20,
 			ctWallCracked: 20
-		}}
-		get paletteDefault() { return {
+		})}
+		get paletteDefault() { return Object.assign( {}, super.paletteDefault, {
 			bDefault:		'AIR',
 			bFloorTile0:	'PLANK',
 			bFloorTile1:	'LECTERN_TOP',
@@ -76,7 +76,7 @@ Module.add('painterHall',function() {
 			bWallMossy:		'MOSSY_STONE_BRICKS',
 			bWallCracked:	'CRACKED_STONE_BRICKS',
 			bWallColumn:	'STONE',
-		}}
+		})}
 
 		get bFloor()	{
 			return (Math.floor(this.cursor.u/this.tileU)+Math.floor(this.cursor.w/this.tileW)) % this.tileModulo ? this.palette.bFloorTile0 : this.palette.bFloorTile1;
@@ -89,6 +89,26 @@ Module.add('painterHall',function() {
 //		get bStart()	{ return 'SAND'; }
 //		get bCorner()	{ return 'DIAMOND'; }
 	}
+
+	Painter.HallSquares = class extends Painter.HallFancy {
+		get parametersDefault() { return Object.assign( {}, super.parametersDefault, {
+			uStride: 4,
+		})}
+		get paletteDefault() { return Object.assign( {}, super.paletteDefault, {
+			bWallOuter:		'STONE_BRICKS',
+			bWallSquares:	'BRICK',
+		})}
+		get wallTexture() { return {
+			textMap: '####\n#ss#\n#ss#\n####\n',
+			lookup: { '#': this.palette.bWallOuter, 's': this.palette.bWallSquares },
+		}}
+
+		get bWall()	{
+			let blockId = this.sample2d( 'wallTexture', this.cursor.u, this.cursor.v, this.uStride, this.head.loft );
+			return blockId;
+		}
+	}
+
 
 	return {}
 });

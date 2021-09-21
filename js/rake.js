@@ -46,7 +46,7 @@ Module.add('rake',function() {
 				for( let loft = -this.sheath ; loft<this.loft+this.sheath ; ++loft ) {
 					let flags = flagLR;
 					flags |= (loft<0 ? FLAG.FLOOR : 0) | (loft>this.loft-1 ? FLAG.ROOF : 0);
-					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),dist,loft,i,flags);
+					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),dist,loft,i,flags,);
 					if( ok === false ) {
 						return false;
 					}
@@ -96,11 +96,11 @@ Module.add('rake',function() {
 			this.z = z;
 			return this;
 		}
-		detect(map3d) {
+		detect(map3d,limit0,limit1) {
 			let maxReach = 16;
 			let reach = [];
 
-			let lateralLimit = 8;
+			let lateralLimit = Math.min(8,limit0,limit1);
 			let ahead = Dir.add[this.dir];
 			let right = Dir.add[Dir.right(this.dir)];
 			let iOffset = [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8, -9, 9 ];
@@ -109,13 +109,13 @@ Module.add('rake',function() {
 			// a 2d map of cached blocks.
 
 			for( let d=0 ; d<maxReach ; ++d ) {
-				let allowWall = (d==0);
+				let mustBeWall = (d==0);
 				let i = 0;
 				while( Math.abs(iOffset[i]) < lateralLimit ) {
 					let x = this.x + ahead.x*d - right.x*iOffset[i];
 					let y = this.y + ahead.y*d - right.y*iOffset[i];
 					let block = map3d.getBlock( x, y, this.z );
-					if( !map3d.contains(x,y,this.z) || !(block.isUnknown || allowWall) ) {
+					if( !map3d.contains(x,y,this.z) || (!mustBeWall && !block.isUnknown) || (mustBeWall && block.passable) ) {
 						lateralLimit = Math.abs( iOffset[i] );
 						break;
 					}

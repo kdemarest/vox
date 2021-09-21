@@ -6,6 +6,7 @@ let SeedData = {};
 let SeedDataDefaults = {
 	zTall: 5,
 	zDeep: 0,
+	zDoor: 2,
 	zFluid: -1,
 }
 
@@ -26,13 +27,29 @@ SeedData.SMALL_CHAMBER = {
 	textMap:
 `
 # # # # #
-# d d ds#
+# s s ss#
 # . . . #
 # . . . #
 # . . . #
-    .
+    +
 `,
 	isStub: true,
+	zShelfTop: 1,
+}
+
+SeedData.RAISED_CENTER = {
+	textMap:
+`
+# # # # # #
+# . . . . #
+# . , , . #
+# . , , . #
+# .r. . .r#
+    . .
+    + +
+`,
+	isStub: true,
+	zShelfTop: 1,
 }
 
 SeedData.TUNNEL_CHAMBER = {
@@ -141,6 +158,22 @@ SeedData.SHAFT_ISLAND = {
 	zDeep: -7,
 }
 
+SeedData.READING_ROOM = {
+	textMap:
+`
+# # # # # # #
+# s s s s s #
+# s . . . s #
+# s .r. .rs #
+# s . . . s #
+# s . . . s #
+      +
+`,
+	isStub: true,
+	zTall: 5,
+	zShelfTop: 4,
+}
+
 SeedData.PIT_ALCOVE = {
 	textMap:
 `
@@ -164,7 +197,7 @@ SeedData.PIT_PATH = {
 # . p p p p p #
 # . . . . p p #
 # # # . . # # #
-      . .
+      + +
 `,
 	isStub: true,
 	zDeep: -5,
@@ -181,7 +214,7 @@ SeedData.PIT_RIMMED = {
 # . p p p . #
 # . . . . . #
 # # # . # # #
-      .
+      +
 `,
 	isStub: true,
 	zDeep: -3,
@@ -203,9 +236,10 @@ SeedData.COLUMNS_AND_THRONE = {
 # . . O .2. . .2O . . #
 # . . . . . . . . . . #
 # . . . . . . . . . . #
-          . . 
+          + + 
 `,
-	isStub: true
+	isStub: true,
+	zDoor: 4,
 }
 
 SeedData.TUNNEL_UTURN = {
@@ -254,6 +288,7 @@ d d d
 `,
 	isStub: true,
 	symmetric: true,
+	zTall: 3,
 }
 
 SeedData.ATTIC = {
@@ -280,7 +315,7 @@ SeedData.BASEMENT = {
   # 1 1 1 2 3 3 #
 # 2s1 1 1 1 4 4 #
   # 1 1 1 1 5 5 #
-  # # w # # . . #
+  # # w # # + + #
 `,
 	isStub: true,
 	zDeep: -4,

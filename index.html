@@ -188,19 +188,24 @@ async function main(){
 
 	let world = new World();
 
-//	let mapString = mapGenerate();
-//	let mapMaker = new MapMaker(mapString);
-//	world.init(mapMaker.map.xLen,mapMaker.map.yLen,16);
-//	world.createFlatWorld( 16 );
-//	mapMaker.makeIntoWorld(world);
+/*
+We need to make themes now. They assemble
+segments of...
+HallControls
+HallPainter
+StubControls
+StubPainter
+RoomControls
+RoomPainter
+*/
 
 	let pathControls = {
-		rgDist: new Roller.Range(5,22,'intRange'),
+		rgDist: new Roller.Range(2,4,'intRange',0,4),
 		ctRise: new Roller.ChanceTo(10),
 		ctFall: new Roller.ChanceTo(20),
 		ctRoof: new Roller.ChanceTo(20),
-		rgRoof: new Roller.Range(2,7,'intBell'),
-		rgWidth: new Roller.Range(0,2,'intBell',1,2),
+		rgRoof: new Roller.Range(1,2,'intBell',0,5),
+		rgWidth: new Roller.Range(2,2,'intBell',1,2),
 		lightSpacing: 12,
 	}
 	let wright = new Wright().init( 24*8, 24*8, 24*8, pathLength=20*8, pathControls );

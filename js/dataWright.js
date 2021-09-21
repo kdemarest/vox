@@ -130,20 +130,21 @@ Module.add('dataWright',function() {
 		}
 	}
 
+
 	class PathControls {
 		constructor() {
 			this.setDefaults();
 		}
 		setDefaults() {
-			this.rgDist      = new Roller.Range(2,20,'intBell');
-			this.ctTurn      = new Roller.ChanceTo(50);
+			this.rgDist      = new Roller.Range(2,5,'intBell',0,4);
+			this.ctTurn      = new Roller.ChanceTo(40);
 			this.ctRoof		 = new Roller.ChanceTo(20);
-			this.rgRoof		 = new Roller.Range(2,7,'intBell');
+			this.rgRoof		 = new Roller.Range(5,5,'intBell');
 			this.ctRise      = new Roller.ChanceTo(30);
 			this.ctFall      = new Roller.ChanceTo(30);
 			this.rgSlope     = new Roller.Often(50,1,new Roller.Range(1/4,1,'floatRange'));
-			this.ctWiden     = new Roller.ChanceTo(100);
-			this.rgWidth     = new Roller.Range(1,3,'intRange',1,2);
+			this.ctWiden     = new Roller.ChanceTo(0);
+			this.rgWidth     = new Roller.Range(2,2,'intRange',1,2);
 			this.roofMin     = 5;
 			this.lightSpacing = 20;
 			return this;
@@ -203,7 +204,7 @@ Module.add('dataWright',function() {
 			this.seedPriorityList = Object.values(SeedType);
 			Array.shuffle(this.seedPriorityList);
 
-			this.painter = new Painter.HallFancy({
+			this.painter = new Painter.HallSquares({
 				driver: this,
 				head: this.head
 			});
@@ -310,7 +311,9 @@ Module.add('dataWright',function() {
 							x: x,
 							y: y,
 							z: z,
-							facing: i<0 ? Dir.left(head.facing) : Dir.right(head.facing)
+							facing: i<0 ? Dir.left(head.facing) : Dir.right(head.facing),
+							u: dist,
+							uToEnd: head.dist-dist
 						});
 					}
 				}
@@ -395,7 +398,7 @@ Module.add('dataWright',function() {
 				let stub = stubLayout[index];
 				//debugger;
 				let rakeReach = (new RakeReach()).set( stub.facing, stub.x, stub.y, stub.z );
-				let reach = rakeReach.detect(this.map3d);
+				let reach = rakeReach.detect(this.map3d,stub.u,stub.uToEnd);
 				let seedList = this.seedPriorityList.filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
 
 				//console.log('picking from '+seedList.length+' seeds.' );
