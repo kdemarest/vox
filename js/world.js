@@ -73,10 +73,10 @@ class World extends Rect3d {
 		let lightMax = 1.0;
 		let lightFull = [lightMax,lightMax,lightMax];
 
-		let trans = block.trans;
+		let hasTranslucentTextures = block.hasTranslucentTextures;
 		let id = block.id;
 
-		var bH = block.fluid && ( z == world.sz - 1 || !blocks[x][y][z+1].fluid ) ? 0.8 : 1.0;
+		var bH = block.isFluid && ( z == world.sz - 1 || !blocks[x][y][z+1].isFluid ) ? 0.8 : 1.0;
 		let zLo = z+block.indent[0];	// Down
 		let zHi = z+block.indent[1]*bH;	// Up
 		let xLo = x+block.indent[2];	// Left
@@ -89,7 +89,7 @@ class World extends Rect3d {
 		{
 			let c = block.getTx( world, x, y, z, BlockDir.UP );
 
-			let m = block.selflit || z>=world.sz-1 ? lightFull : lightMap[x][y][z+1];
+			let m = block.isSelfLit || z>=world.sz-1 ? lightFull : lightMap[x][y][z+1];
 			let r = m[0];
 			let g = m[1];
 			let b = m[2];
@@ -100,7 +100,7 @@ class World extends Rect3d {
 			let c3 = c[1]+(c[3]-c[1])*block.indent[3];	// c[1]/c[3] is y so high is right(3)
 
 			pushQuad(
-				block.trans ? vTrans : vSolid,
+				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yLo, zHi,		c0, c1, r, g, b, 1.0 ],
 				[ xHi, yLo, zHi,		c2, c1, r, g, b, 1.0 ],
 				[ xHi, yHi, zHi, 		c2, c3, r, g, b, 1.0 ],
@@ -113,7 +113,7 @@ class World extends Rect3d {
 		{
 			let c = block.getTx( world, x, y, z, BlockDir.DOWN );
 			
-			let m = block.selflit || z<=0 ? lightFull : lightMap[x][y][z-1];
+			let m = block.isSelfLit || z<=0 ? lightFull : lightMap[x][y][z-1];
 			let r = m[0];
 			let g = m[1];
 			let b = m[2];
@@ -124,7 +124,7 @@ class World extends Rect3d {
 			let c3 = c[1]+(c[3]-c[1])*block.indent[3];	// c[1]/c[3] is y so high is right(3)
 			
 			pushQuad(
-				block.trans ? vTrans : vSolid,
+				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yHi, zLo,		c0, c3, r, g, b, 1.0 ],
 				[ xHi, yHi, zLo,		c2, c3, r, g, b, 1.0 ],
 				[ xHi, yLo, zLo,		c2, c1, r, g, b, 1.0 ],
@@ -138,7 +138,7 @@ class World extends Rect3d {
 			// c is in this order: [ xPixel/this.width, yPixel/this.height, (xPixel+width)/this.width, (yPixel+height)/this.height ]
 			let c = block.getTx( world, x, y, z, BlockDir.FRONT );
 			
-			let m = block.selflit || y<=0 ? lightFull : lightMap[x][y-1][z];
+			let m = block.isSelfLit || y<=0 ? lightFull : lightMap[x][y-1][z];
 			let r = m[0];
 			let g = m[1];
 			let b = m[2];
@@ -150,7 +150,7 @@ class World extends Rect3d {
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
 
 			pushQuad(
-				block.trans ? vTrans : vSolid,
+				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yLo, zLo,	c0, c3, r, g, b, 1.0 ],
 				[ xHi, yLo, zLo,	c2, c3, r, g, b, 1.0 ],
 				[ xHi, yLo, zHi,	c2, c1, r, g, b, 1.0 ],
@@ -163,7 +163,7 @@ class World extends Rect3d {
 		{
 			let c = block.getTx( world, x, y, z, BlockDir.BACK );
 			
-			let m = block.selflit || y>=world.sy-1 ? lightFull : lightMap[x][y+1][z];
+			let m = block.isSelfLit || y>=world.sy-1 ? lightFull : lightMap[x][y+1][z];
 			let r = m[0];
 			let g = m[1];
 			let b = m[2];
@@ -176,7 +176,7 @@ class World extends Rect3d {
 			//WE ARE WORKING HERE^^^^
 
 			pushQuad(
-				block.trans ? vTrans : vSolid,
+				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yHi, zHi,	c2, c1, r, g, b, 1.0 ],
 				[ xHi, yHi, zHi,	c0, c1, r, g, b, 1.0 ],
 				[ xHi, yHi, zLo,	c0, c3, r, g, b, 1.0 ],
@@ -189,7 +189,7 @@ class World extends Rect3d {
 		{
 			let c = block.getTx( world, x, y, z, BlockDir.LEFT );
 			
-			let m = block.selflit || x<=0 ? lightFull : lightMap[x-1][y][z];
+			let m = block.isSelfLit || x<=0 ? lightFull : lightMap[x-1][y][z];
 			let r = m[0];
 			let g = m[1];
 			let b = m[2];
@@ -200,7 +200,7 @@ class World extends Rect3d {
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
 			
 			pushQuad(
-				block.trans ? vTrans : vSolid,
+				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yLo, zHi,	c2, c1, r, g, b, 1.0 ],
 				[ xLo, yHi, zHi,	c0, c1, r, g, b, 1.0 ],
 				[ xLo, yHi, zLo,	c0, c3, r, g, b, 1.0 ],
@@ -213,7 +213,7 @@ class World extends Rect3d {
 		{
 			let c = block.getTx( world, x, y, z, BlockDir.RIGHT );
 			
-			let m = block.selflit || x>=world.sx-1 ? lightFull : lightMap[x+1][y][z];
+			let m = block.isSelfLit || x>=world.sx-1 ? lightFull : lightMap[x+1][y][z];
 			let r = m[0];
 			let g = m[1];
 			let b = m[2];
@@ -224,7 +224,7 @@ class World extends Rect3d {
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
 			
 			pushQuad(
-				block.trans ? vTrans : vSolid,
+				hasTranslucentTextures ? vTrans : vSolid,
 				[ xHi, yLo, zLo,	c0, c3, r, g, b, 1.0 ],
 				[ xHi, yHi, zLo,	c2, c3, r, g, b, 1.0 ],
 				[ xHi, yHi, zHi,	c2, c1, r, g, b, 1.0 ],

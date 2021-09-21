@@ -366,7 +366,7 @@ Module.add('renderer',function(){
 					for ( var x = chunk.start[0]; x < chunk.end[0]; x++ ) {
 						for ( var y = chunk.start[1]; y < chunk.end[1]; y++ ) {
 							for ( var z = chunk.start[2]; z < chunk.end[2]; z++ ) {
-								if ( world.blocks[x][y][z] == BlockType.AIR ) continue;
+								if ( world.blocks[x][y][z].neverRender ) continue;
 								world.pushVertices( vSolid, vTrans, x, y, z );
 							}
 						}

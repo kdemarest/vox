@@ -312,9 +312,24 @@ SeedData.MURDER_HOLE = {
 `,
 	isStub: true,
 	palette: {
-		bWindow: SeedBlockType.AIR
+		bWindow: BlockType.AIR
 	}
 }
+
+SeedData.TEST = {
+	textMap:
+`
+# # # # # #
+# s s . o #
+# . . . = #
+# , . . = #
+# , . . = #
+`,
+	isStub: true,
+	zTall: 5,
+	zDeep: -3,
+}
+
 
 
 return {

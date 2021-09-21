@@ -1,25 +1,5 @@
 Module.add('seed',function(extern) {
 
-let SeedBrushPaletteDefault = function() {
-	return {
-		bTall: SeedBlockType.AIR,
-		bDeep: SeedBlockType.AIR,
-		bFloor: SeedBlockType.FLOOR,
-		bRoof: SeedBlockType.ROOF,
-		bWall: SeedBlockType.WALL,
-		bDoor: SeedBlockType.AIR,
-		bBase: SeedBlockType.FLOOR,
-		bPit: SeedBlockType.AIR,
-		bDias: SeedBlockType.FLOOR,
-		bShelf: SeedBlockType.FLOOR,
-		bBridge: SeedBlockType.BRIDGE,
-		bTunnel: SeedBlockType.AIR,
-		bWindow: SeedBlockType.WINDOW,
-		bColumn: SeedBlockType.WALL,
-		bFluid: SeedBlockType.FLUID,
-		bLight: SeedBlockType.LIGHT,
-	}
-};
 
 class SeedBrush {
 	constructor(seed,head,getFn,putFn) {
@@ -48,7 +28,7 @@ class SeedBrush {
 
 	get setUpon() {
 		for( let i=this.zDeep ; i<this.zTall ; ++i ) {
-			if( this.vertical[i].isAir ) {
+			if( this.vertical[i].isGas ) {
 				return i;
 			}
 		}
@@ -77,33 +57,33 @@ class SeedBrush {
 		);
 	}
 
-	put(z,seedBlock) {
-		console.assert( seedBlock && seedBlock instanceof SeedBlock );
+	put(z,block) {
+		console.assert( block && block instanceof Block );
 		console.assert( Number.isInteger(z) );
-		this.vertical[z] = seedBlock;
+		this.vertical[z] = block;
 		this.putFn(
 			this.xCursor,
 			this.yCursor,
 			this.zCursor + z,
-			seedBlock
+			block
 		);
 		return this;
 	}
 
-	putWeak(z,seedBlock) {
+	putWeak(z,block) {
 		if( this.get(z).isUnknown ) {
-			this.put(z,seedBlock);
+			this.put(z,block);
 		}
 	}
 
-	_fill(_z0,_z1,seedBlock,weak=false,stopAtKnown=false) {
-		console.assert( seedBlock && seedBlock instanceof SeedBlock );
+	_fill(_z0,_z1,block,weak=false,stopAtKnown=false) {
+		console.assert( block && block instanceof Block );
 		console.assert( Number.isInteger(_z0) && Number.isInteger(_z1) );
 		let z0 = Math.min(_z0,_z1);
 		let z1 = Math.max(_z0,_z1);
 		for( let z=z0 ; z<z1 ; ++z ) {
 			if( !weak || this.get(z).isUnknown ) {
-				this.put(z,seedBlock);
+				this.put(z,block);
 			}
 			else if( stopAtKnown ) {
 				break;
@@ -112,16 +92,16 @@ class SeedBrush {
 		return this;
 	}
 
-	fill(_z0,_z1,seedBlock) {
-		return this._fill(_z0,_z1,seedBlock);
+	fill(_z0,_z1,block) {
+		return this._fill(_z0,_z1,block);
 	}
 
-	fillWeak( _z0,_z1,seedBlock) {
-		return this._fill(_z0,_z1,seedBlock,true);
+	fillWeak( _z0,_z1,block) {
+		return this._fill(_z0,_z1,block,true);
 	}
 
-	fillUntilKnown(_z0,_z1,seedBlock) {
-		return this._fill(_z0,_z1,seedBlock,true,true);
+	fillUntilKnown(_z0,_z1,block) {
+		return this._fill(_z0,_z1,block,true,true);
 	}
 
 	stroke(seedTile) {
@@ -129,17 +109,18 @@ class SeedBrush {
 		this.vertical = [];
 
 		if( seedTile === null || seedTile.isUnknown ) {
-			if( this.distCursor <=0 ) {
-				this.fillUntilKnown( seed.zDeep, seed.zTall, this.bWall );
-				this.fill( this.head.loft, seed.zTall, this.bWall );
-			}
+// Put this back in when ready...
+//			if( this.distCursor <=0 ) {
+//				this.fillUntilKnown( seed.zDeep, seed.zTall, this.bWall );
+//				this.fill( this.head.loft, seed.zTall, this.bWall );
+//			}
 			return this;
 		}
 
 		if( seed.zDeep < 0 ) {
 			// Put a floor below the pit, and fill it with air.
 			this.put( seed.zDeep-1, this.bBase );
-			this.fill( seed.zDeep, -1, this.bDeep );
+			this.fill( seed.zDeep, -1, this.bDeepFill );
 		}
 		else {
 			// There is just a regular floor in this room
@@ -147,7 +128,7 @@ class SeedBrush {
 		}
 
 		// Fill the top of the room with air
-		this.fill( 0, seed.zTall, this.bTall );
+		this.fill( 0, seed.zTall, this.bTallFill );
 
 		// Cap it with a roof
 		this.put( seed.zTall, this.bRoof );
@@ -208,8 +189,9 @@ let Seed = class {
 			for( let key in this.palette ) {
 				let entry = this.palette[key];
 				if( typeof entry == 'string' ) {
-					console.assert( SeedBlockType[entry] );
-					this.palette[key] = SeedBlockType[entry];
+					debugger;
+					console.assert( BlockType[entry] );
+					this.palette[key] = BlockType[entry];
 				}
 			}
 		}

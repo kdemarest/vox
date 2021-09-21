@@ -35,223 +35,184 @@ const BlockDir = new class {
 
 let BlockData = {};
 
-// Air
-BlockData.AIR = {
-	id: 0,
+let BlockDataDefaults = {
+	transparent: false,		// means that adjacent blocks must draw their outside edges.
+	spawnable: true,		// The player can not spawn this block.
+	passable: false,		// The player can walk through this block.
+	isGas: false,			// General idea that the space is very open
+	textureStem: null,		// Array from 0 to 5 this is the image file for the face down, up, left, right, front, back
+	isSelfLit: false,		// Does it glow, all by itself?
+	hasTranslucentTextures: false,	// determines which list you go into for drawing.
+};
+
+BlockData.UNKNOWN = {
+	isUnknown: true,
+	neverRender: true,
 	spawnable: false,
 	transparent: true,
 	passable: true,
-	isAir: true,
-	mayMove: true,
 	textureStem: [null],
 };
 
-// Bedrock
-BlockData.BEDROCK = {
-	id: 1,
+BlockData.AIR = {
+	neverRender: true,
 	spawnable: false,
-	transparent: false,
+	transparent: true,
+	passable: true,
+	isGas: true,
+	textureStem: [null],
+};
+
+BlockData.BEDROCK = {
+	spawnable: false,
 	textureStem: ['block/bedrock.png'],
 };
 
-// Dirt
 BlockData.DIRT = {
-	id: 2,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/dirt.png'],
 };
 
-// Wood
 BlockData.WOOD = {
-	id: 3,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/oak_planks.png'],
 };
 
-// TORCH
 BlockData.TORCH = {
-	id: 4,
-	spawnable: true,
 	transparent: true,
-	selflit: true,
+	isSelfLit: true,
 	passable: true,
 	light: { mag: 6, r:1.0, g:1.0, b:1.0 },
-	gravity: false,
 	indent: [ 0/16, 10/16, 7/16, 9/16, 7/16, 9/16 ],
 	textureStem: ['block/torch.png'],
 };
 
-// Bookcase
-BlockData.BOOKCASE = {
-	id: 5,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	light: { mag: 2, r:1.0, g: 1.0, b: 1.0 },
-	gravity: false,
-	textureStem: ['block/bookshelf.png'],
-};
-
-// Lava
-BlockData.LAVA = {
-	id: 6,
-	spawnable: false,
+BlockData.BRIDGE = {
 	transparent: true,
-	selflit: true,
-	light: { mag: 5, r: 1.0, g: 0.5, b: 0.5 },
-	gravity: true,
-	fluid: true,
-	textureStem: ['block/lava.png'],
-};
-
-// Plank
-BlockData.PLANK = {
-	id: 7,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
+	indent: [ 8/16, 16/16, 0, 1, 0, 1 ],
 	textureStem: ['block/oak_planks.png'],
 };
 
-// Cobblestone
+BlockData.CONCRETE = {
+	textureStem: ['block/light_gray_concrete.png'],
+};
+
+BlockData.BOOKCASE = {
+	light: { mag: 2, r:1.0, g: 1.0, b: 1.0 },
+	textureStem: ['block/bookshelf.png'],
+};
+
+BlockData.LAVA = {
+	spawnable: false,
+	transparent: true,
+	isSelfLit: true,
+	light: { mag: 5, r: 1.0, g: 0.5, b: 0.5 },
+	isFluid: true,
+	textureStem: ['block/lava.png'],
+};
+
+BlockData.PLANK = {
+	textureStem: ['block/oak_planks.png'],
+};
+
+BlockData.STONE_BRICKS = {
+	textureStem: ['block/stone_bricks.png'],
+};
+
+BlockData.MOSSY_STONE_BRICKS = {
+	textureStem: ['block/mossy_stone_bricks.png'],
+};
+
+BlockData.CRACKED_STONE_BRICKS = {
+	textureStem: ['block/cracked_stone_bricks.png'],
+};
+
+BlockData.OAK_LOG = {
+	textureStem: ['block/oak_log_top.png','block/oak_log_top.png','block/oak_log.png','block/oak_log.png','block/oak_log.png','block/oak_log.png'],
+};
+
+
+BlockData.STONE_SLAB = {
+	transparent: true,
+	indent: [ 0/16, 8/16, 0, 1, 0, 1 ],
+	textureStem: ['block/stone_bricks.png'],
+};
+
+BlockData.POST = {
+	transparent: true,
+	indent: [ 0/16, 16/16, 7/16, 9/16, 7/16, 9/16 ],
+	textureStem: ['block/jungle_planks.png'],
+};
+
+
 BlockData.COBBLESTONE = {
-	id: 8,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/cobblestone.png'],
 };
 
-// Stone
 BlockData.STONE = {
-	id: 9,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/stone.png'],
 };
 
-// Brick
 BlockData.BRICK = {
-	id: 10,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/bricks.png'],
 
 };
 
-// Sand
 BlockData.SAND = {
-	id: 11,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: true,
 	textureStem: ['block/sand.png'],
 };
 
-// Gravel
+BlockData.SHELF = {
+	transparent: true,
+	indent: [ 14/16, 16/16, 0, 1, 0, 1 ],
+	textureStem: ['block/jungle_planks.png'],
+};
+
+BlockData.JUNGLE_PLANKS = {
+	textureStem: ['block/jungle_planks.png'],
+};
+
+BlockData.LECTERN_TOP = {
+	textureStem: ['block/lectern_top.png'],
+};
+
 BlockData.GRAVEL = {
-	id: 12,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: true,
 	textureStem: ['block/gravel.png'],
 };
 
-// Iron
 BlockData.IRON = {
-	id: 13,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/iron_ore.png'],
 };
 
-// Gold
 BlockData.GOLD = {
-	id: 14,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/gold_ore.png'],
 };
 
-// Diamond
 BlockData.DIAMOND = {
-	id: 15,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/diamond_block.png'],
 };
 
 
-// Obsidian
 BlockData.OBSIDIAN = {
-	id: 16,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/obsidian.png'],
 };
 
-// Glass
 BlockData.GLASS = {
-	id: 17,
-	spawnable: true,
 	transparent: true,
-	trans: true,
-	selflit: false,
-	gravity: false,
+	hasTranslucentTextures: true,
 	textureStem: ['block/glass.png']
 };
 
-// Sponge
 BlockData.SPONGE = {
-	id: 18,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/sponge.png'],
 };
 
-// Water
 BlockData.WATER = {
-	id: 19,
-	spawnable: true,
 	transparent: true,
-	trans: true,
-	selflit: false,
-	gravity: false,
-	fluid: true,
+	hasTranslucentTextures: true,
+	isFluid: true,
 	textureStem: ['block/waterBoldBlue.png'],
 };
 
-// TNT
 BlockData.TNT = {
-	id: 20,
-	spawnable: true,
-	transparent: false,
-	selflit: false,
-	gravity: false,
 	textureStem: ['block/tnt_side.png'],
 };
 
@@ -261,9 +222,11 @@ class Block {
 	}
 	initFromData(key,value) {
 		this.id = key;
-		Object.assign( this, value );
+		Object.assign( this, BlockDataDefaults, value );
 		this.isIndented = this.indent !== undefined && this.indent !== null && this.indent !== false;
 		this.indent = this.indent || Block.noIndent;
+		
+		this.textureStem = this.textureStem || [];
 		BlockDir.traverse( blockDir => {
 			if( this.textureStem[blockDir] === undefined ) {
 				this.textureStem[blockDir] = this.textureStem[0];

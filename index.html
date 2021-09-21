@@ -37,12 +37,14 @@
 <script src="js/dataPicker.js" charset="utf-8"></script>
 <script src="js/dataMason.js" charset="utf-8"></script>
 <script src="js/dataSeedTile.js" charset="utf-8"></script>
-<script src="js/dataSeedBlock.js" charset="utf-8"></script>
 <script src="js/dataBlocks.js" type="text/javascript"></script>
 <script src="js/dataSeed.js" charset="utf-8"></script>
 <script src="js/map2d.js" charset="utf-8"></script>
 <script src="js/map3d.js" charset="utf-8"></script>
 <script src="js/seed.js" charset="utf-8"></script>
+<script src="js/rake.js" charset="utf-8"></script>
+<script src="js/painter.js" charset="utf-8"></script>
+<script src="js/painterHall.js" charset="utf-8"></script>
 <script src="js/dataWright.js" charset="utf-8"></script>
 <script src="js/path.js" charset="utf-8"></script>
 <script src="js/place.js" charset="utf-8"></script>
@@ -147,12 +149,8 @@ let wrightToWorld = (map,world) => {
 	world.bulkChangeBegin();
 	let count = 0;
 	map.traverse( (x,y,z) => {
-		let b = BlockType[map.getBlock(x,y,z).toBlock];
+		let b = map.getBlock(x,y,z);
 		console.assert(b);
-		let zoneId = map.getZoneId(x,y,z);
-		if( b==BlockType.DIRT && (zoneId%2)==1 ) { // !== -1 && wright.driver.getZone(zoneId).wallToggle ) {
-			b = BlockType.BRICK;
-		}
 		if( world.contains(x,y,z) ) {
 			world.setBlock(x,y,z,b);
 			count += 1;

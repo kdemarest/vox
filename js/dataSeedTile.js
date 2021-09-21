@@ -31,7 +31,7 @@ Module.add('dataSeedTile',function(extern) {
 			symbol: 'p',
 			isPit: true,
 			render: brush => {
-				brush.fill(brush.zDeep,0,brush.bPit);
+				brush.fill(brush.zDeep,0,brush.bPitFill);
 				brush.put(brush.zDeep-1,brush.bBase);
 			}
 		},
@@ -40,6 +40,20 @@ Module.add('dataSeedTile',function(extern) {
 			isColumn: true,
 			render: brush => {
 				brush.fill(brush.zDeep,brush.zTall,brush.bColumn);
+			}
+		},
+		POST: {
+			symbol: 'o',
+			isPost: true,
+			render: brush => {
+				brush.fill(brush.zDeep,brush.zTall,brush.bPost);
+			}
+		},
+		SLAB: {
+			symbol: ',',
+			isSlab: true,
+			render: brush => {
+				brush.fill(brush.zDeep,brush.zTall,brush.bSlab);
 			}
 		},
 		DIAS: {
@@ -74,7 +88,7 @@ Module.add('dataSeedTile',function(extern) {
 		},
 		FLUID: {
 			symbol: 'w',
-			isFLUID: true,
+			isFluid: true,
 			render: brush => {
 				brush.fill(Math.min(-1,brush.zDeep),brush.zFluid+1,brush.bFluid);
 				brush.put(Math.min(-1,brush.zDeep,brush.zFluid), brush.bFloor );
@@ -100,10 +114,10 @@ heights.forEach( symbol => {
 		render: brush => {
 			let altitudeShift = brush.seed.altitudeShift || 0;
 			let altitude = _altitude + altitudeShift;
-			brush.fill(brush.zDeep,altitude,brush.seed.hollowBelow ? brush.bTall : brush.bWall);
+			brush.fill(brush.zDeep,altitude,brush.seed.hollowBelow ? brush.bTallFill : brush.bWall);
 			brush.put(altitude,brush.bFloor);
 			if( this.distCursor <= 0 ) {
-				brush.fill(altitude+1,altitude+4,brush.bTall);
+				brush.fill(altitude+1,altitude+4,brush.bTallFill);
 			}
 		}
 	}

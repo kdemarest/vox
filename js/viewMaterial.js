@@ -13,7 +13,7 @@ let ViewMaterial = class {
 		var texOffset = 0;
 
 		BlockType.traverse( (block,blockId) => {
-			if( !block.spawnable ) {
+			if( block.noSpawn ) {
 				return;
 			}
 

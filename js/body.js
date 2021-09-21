@@ -186,7 +186,7 @@ Module.add('body',function(){
 		{
 
  			function sideCollide(block) {
- 				return !block.passable && !block.fluid;
+ 				return !block.passable && !block.isFluid;
  			}
 
 			let result = {};
@@ -254,12 +254,12 @@ Module.add('body',function(){
 				for ( var y = bPos.y - 1; y <= bPos.y + 1; y++ )
 				{
 					let b0 = world.getBlock( x, y, newBZLower );
-					if ( !b0.passable && !b0.fluid )
-						zCandidate.push( { z: newBZLower + 1, dir: 1, x1: x, y1: y, x2: x + 1, y2: y + 1, fluid: false/*b0.fluid*/ } );
+					if ( !b0.passable && !b0.isFluid )
+						zCandidate.push( { z: newBZLower + 1, dir: 1, x1: x, y1: y, x2: x + 1, y2: y + 1 } );
 					
 					let b1 = world.getBlock( x, y, newBZUpper )
-					if ( !b1.passable !== false && !b1.fluid )
-						zCandidate.push( { z: newBZUpper, dir: -1, x1: x, y1: y, x2: x + 1, y2: y + 1, fluid: false /*b1.fluid*/ } );
+					if ( !b1.passable !== false && !b1.isFluid )
+						zCandidate.push( { z: newBZUpper, dir: -1, x1: x, y1: y, x2: x + 1, y2: y + 1 } );
 				}
 			}
 
@@ -272,7 +272,7 @@ Module.add('body',function(){
 				velocity.z = 0.01;
 			}
 
-			if( world.getBlock(bPos.x,bPos.y,bPos.z).fluid ) {
+			if( world.getBlock(bPos.x,bPos.y,bPos.z).isFluid ) {
 				result.inFluid = true;
 			}
 
@@ -288,7 +288,8 @@ Module.add('body',function(){
 
 				if ( rectRectCollide( face, playerFace ) && velocity.z * face.dir < 0 )
 				{
-					if( face.fluid ) {
+					if( face.isFluid ) {
+						debugger;  // this should never get called now. Remove later.
 						result.inFluid = true;
 						continue;
 					}
