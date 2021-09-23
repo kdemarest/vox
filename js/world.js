@@ -1,5 +1,7 @@
 Module.add('world',function(){
 
+let onMac = navigator.platform.toUpperCase().indexOf('MAC')>=0;
+
 class World extends Rect3d {
 	World() {
 	}
@@ -99,6 +101,11 @@ class World extends Rect3d {
 			let c1 = c[1]+(c[3]-c[1])*block.indent[2];	// c[1]/c[3] is y so low is left(2)
 			let c3 = c[1]+(c[3]-c[1])*block.indent[3];	// c[1]/c[3] is y so high is right(3)
 
+			if( onMac ) {
+				c2 *= 0.999;
+				c3 *= 0.999;
+			}
+
 			pushQuad(
 				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yLo, zHi,		c0, c1, r, g, b, 1.0 ],
@@ -122,6 +129,11 @@ class World extends Rect3d {
 			let c2 = c[0]+(c[2]-c[0])*block.indent[5];	// c[0]/c[2] is x, so high is back(5)
 			let c1 = c[1]+(c[3]-c[1])*block.indent[2];	// c[1]/c[3] is y so low is left(2)
 			let c3 = c[1]+(c[3]-c[1])*block.indent[3];	// c[1]/c[3] is y so high is right(3)
+
+			if( onMac ) {
+				c2 *= 0.999;
+				c3 *= 0.999;
+			}
 			
 			pushQuad(
 				hasTranslucentTextures ? vTrans : vSolid,
@@ -149,6 +161,15 @@ class World extends Rect3d {
 			let c1 = c[1]+(c[3]-c[1])*(1-block.indent[1]);	// c[1]/c[3] is y, which is inverse, so use up(1) at bottom, AND use 1-indent
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
 
+			if( onMac && c2!=1.0 ) {
+				//debugger;
+			}
+
+			if( onMac ) {
+				c2 *= 0.999;
+				c3 *= 0.999;
+			}
+
 			pushQuad(
 				hasTranslucentTextures ? vTrans : vSolid,
 				[ xLo, yLo, zLo,	c0, c3, r, g, b, 1.0 ],
@@ -173,7 +194,10 @@ class World extends Rect3d {
 			let c1 = c[1]+(c[3]-c[1])*(1-block.indent[1]);	// c[1]/c[3] is y, which is inverse, so use up(1) at bottom, AND use 1-indent
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
 			
-			//WE ARE WORKING HERE^^^^
+			if( onMac ) {
+				c2 *= 0.999;
+				c3 *= 0.999;
+			}
 
 			pushQuad(
 				hasTranslucentTextures ? vTrans : vSolid,
@@ -198,6 +222,11 @@ class World extends Rect3d {
 			let c2 = c[0]+(c[2]-c[0])*block.indent[5];	// c[0]/c[2] is x, so high is back(5)
 			let c1 = c[1]+(c[3]-c[1])*(1-block.indent[1]);	// c[1]/c[3] is y, which is inverse, so use up(1) at bottom, AND use 1-indent
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
+
+			if( onMac ) {
+				c2 *= 0.999;
+				c3 *= 0.999;
+			}
 			
 			pushQuad(
 				hasTranslucentTextures ? vTrans : vSolid,
@@ -222,6 +251,11 @@ class World extends Rect3d {
 			let c2 = c[0]+(c[2]-c[0])*block.indent[5];	// c[0]/c[2] is x, so high is back(5)
 			let c1 = c[1]+(c[3]-c[1])*(1-block.indent[1]);	// c[1]/c[3] is y, which is inverse, so use up(1) at bottom, AND use 1-indent
 			let c3 = c[1]+(c[3]-c[1])*(1-block.indent[0]);	// c[1]/c[3] is y, which is inverse, so use down(0) at top, AND use 1-indent
+
+			if( onMac ) {
+				c2 *= 0.999;
+				c3 *= 0.999;
+			}
 			
 			pushQuad(
 				hasTranslucentTextures ? vTrans : vSolid,

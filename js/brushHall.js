@@ -70,7 +70,7 @@ Module.add('brushHall',function() {
 		get paletteData() { return Object.assign( {}, super.paletteData, {
 			bDefault:		'AIR',
 			bFloorTile0:	'PLANK',
-			bFloorTile1:	'LECTERN_TOP',
+			bFloorTile1:	'JUNGLE_PLANKS', //'LECTERN_TOP',
 			bRoof:			'STONE',
 			bWall:			'STONE_BRICKS',
 			bWallMossy:		'MOSSY_STONE_BRICKS',
