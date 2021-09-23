@@ -25,6 +25,10 @@ Module.add('map2d',function(extern) {
 			console.assert( this.validate(dir) );
 			return (dir+8+2) % 8;
 		}
+		straight(dir) {
+			console.assert( this.validate(dir) );
+			return dir;
+		}
 		reverse(dir) {
 			console.assert( this.validate(dir) );
 			return (dir+8+4) % 8;

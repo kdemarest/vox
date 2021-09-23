@@ -1,24 +1,25 @@
-Module.add('painterHall',function() {
+Module.add('brushHall',function() {
 
 	let Rand = Random.Pseudo;
 
-	Painter.Hall = class extends Painter.Base {
+	let HallBrush = {};
+
+	HallBrush.Base = class extends Brush.Base {
 		begin( entryDist ) {
 			this.flagTURN	= (this.head.turn=='left' ? 0 : FLAG.LWALL) | (this.head.turn=='right' ? 0 : FLAG.RWALL);
 			this.entryDist	= entryDist;
 		}
 
-		getBlock() {
-			let cursor = this.cursor;
-			let flags  = cursor.flags;
+		determineBlockId() {
+			let flags  = this.flags;
 
-			cursor.inTurn = (this.head.turn && cursor.u < this.entryDist);
+			this.inTurn = (this.head.turn && this.u < this.entryDist);
 
 			let blockId = this.bDefault;
 
 			if( flags & FLAG.FLOOR )		{ blockId = this.bFloor; }
 			if( flags & FLAG.ROOF)			{ blockId = this.bRoof; }
-			if( cursor.inTurn ) {
+			if( this.inTurn ) {
 				if( flags & FLAG.START )	{ blockId = this.bStart; }
 				if( flags & this.flagTURN )	{ blockId = this.bCorner; }
 			}
@@ -28,12 +29,12 @@ Module.add('painterHall',function() {
 			blockId = this.bSpecial || blockId;
 
 			console.assert( BlockType[blockId] && blockId !== 'UNKNOWN' );
-			return BlockType[blockId];
+			return blockId;
 		}
 	}
 
-	Painter.HallStandard = class extends Painter.Hall {
-		get paletteDefault() { return Object.assign( {}, super.paletteDefault, {
+	HallBrush.Standard = class extends HallBrush.Base {
+		get paletteData() { return Object.assign( {}, super.paletteData, {
 			bDefault:	'AIR',
 			bFloor:		'PLANK',
 			bRoof:		'DIRT',
@@ -43,23 +44,22 @@ Module.add('painterHall',function() {
 		get bStart()	{ return this.bWall; }
 		get bCorner()	{ return this.bWall; }
 		get bSpecial()	{
-			let cursor	= this.cursor;
 			let block	= null;
-			let hallEdge = cursor.w==-Math.floor(this.head.width/2) && cursor.v==2;
-			let spaced = (this.driver.remaining-cursor.u) % this.driver.pathControls.lightSpacing == 0;
+			let hallEdge = this.w==-Math.floor(this.head.width/2) && this.v==2;
+			let spaced = (this.driver.remaining-this.u) % this.driver.pathControls.lightSpacing == 0;
 			if( hallEdge && spaced ) {
 				block = 'TORCH';
 			}
 
-			if( cursor.x==this.head.x && cursor.y==this.head.y && (cursor.flags & FLAG.FLOOR) ) {
+			if( this.x==this.head.x && this.y==this.head.y && (this.flags & FLAG.FLOOR) ) {
 				block = 'IRON';
 			}
 			return block;
 		}
 	}
 
-	Painter.HallFancy = class extends Painter.HallStandard {
-		get parametersDefault() { return Object.assign( {}, super.parametersDefault, {
+	HallBrush.Fancy = class extends HallBrush.Standard {
+		get parameterData() { return Object.assign( {}, super.parameterData, {
 			columnSpacing: 500,
 			tileU: 1,
 			tileW: 1,
@@ -67,7 +67,7 @@ Module.add('painterHall',function() {
 			ctWallMossy: 20,
 			ctWallCracked: 20
 		})}
-		get paletteDefault() { return Object.assign( {}, super.paletteDefault, {
+		get paletteData() { return Object.assign( {}, super.paletteData, {
 			bDefault:		'AIR',
 			bFloorTile0:	'PLANK',
 			bFloorTile1:	'LECTERN_TOP',
@@ -79,22 +79,21 @@ Module.add('painterHall',function() {
 		})}
 
 		get bFloor()	{
-			return (Math.floor(this.cursor.u/this.tileU)+Math.floor(this.cursor.w/this.tileW)) % this.tileModulo ? this.palette.bFloorTile0 : this.palette.bFloorTile1;
+			return (Math.floor(this.u/this.tileU)+Math.floor(this.w/this.tileW)) % this.tileModulo ? this.palette.bFloorTile0 : this.palette.bFloorTile1;
 		}
 		get bWall()		{
-			let c=this.cursor;
-			if( c.uGlobal % this.columnSpacing == 0 ) return this.palette.bWallColumn;
+			if( this.uGlobal % this.columnSpacing == 0 ) return this.palette.bWallColumn;
 			return Rand.chance100(this.ctWallMossy) ? this.palette.bWallMossy : Rand.chance100(this.ctWallCracked) ? this.palette.bWallCracked : this.palette.bWall;
 		}
 //		get bStart()	{ return 'SAND'; }
 //		get bCorner()	{ return 'DIAMOND'; }
 	}
 
-	Painter.HallSquares = class extends Painter.HallFancy {
-		get parametersDefault() { return Object.assign( {}, super.parametersDefault, {
+	HallBrush.Squares = class extends HallBrush.Fancy {
+		get parameterData() { return Object.assign( {}, super.parameterData, {
 			uStride: 4,
 		})}
-		get paletteDefault() { return Object.assign( {}, super.paletteDefault, {
+		get paletteData() { return Object.assign( {}, super.paletteData, {
 			bWallOuter:		'STONE_BRICKS',
 			bWallSquares:	'BRICK',
 		})}
@@ -104,11 +103,13 @@ Module.add('painterHall',function() {
 		}}
 
 		get bWall()	{
-			let blockId = this.sample2d( 'wallTexture', this.cursor.u, this.cursor.v, this.uStride, this.head.loft );
+			let blockId = this.sample2d( 'wallTexture', this.u, this.v, this.uStride, this.head.loft );
 			return blockId;
 		}
 	}
 
 
-	return {}
+	return {
+		HallBrush: HallBrush
+	}
 });

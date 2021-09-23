@@ -346,7 +346,7 @@ SeedData.MURDER_HOLE = {
 # ^ # ^ # ^ #
 `,
 	isStub: true,
-	palette: {
+	paletteData: {
 		bWindow: 'AIR'
 	}
 }

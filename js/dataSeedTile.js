@@ -137,7 +137,7 @@ heights.forEach( symbol => {
 			let altitude = _altitude + altitudeShift;
 			brush.fillPassable(brush.zDeep,altitude,brush.seed.hollowBelow ? brush.bTallFill : brush.bWall);
 			brush.put(altitude,brush.bFloor);
-			if( this.distCursor <= 0 ) {
+			if( brush.dist <= 0 ) {
 				brush.fill(altitude+1,altitude+4,brush.bTallFill);
 			}
 		}

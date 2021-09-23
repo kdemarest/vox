@@ -157,6 +157,126 @@ Module.add('dataWright',function() {
 			return this;
 		}
 	}
+/*
+Driver.Room = class extends Driver.Base {
+	constructor() {
+		this.phase = 0;
+		this.zTarget = null;
+		this.numSegments = null;
+		this.uStride = 5;
+		this.vStride = 5;
+		this.wStride = 5;
+
+		this.brush = new HallBrush.Squares({
+			driver: this,
+			head: this.head
+		});
+		this.brush.attachCursor( this.createBrushCursor() );
+		this.brush.setPalette({});
+	}
+
+	onBloatStep() {
+		if( justTurned ) {
+			this.bloatL = Rand.intRange(0,3);
+			this.bloatR = Rand.intRange(0,3);
+			if( Rand.chance100(50) ) this.squareTheCorner();
+		}
+		if( Rand.chance100(33) ) {
+			this.bloatL += Rand.intRange(0,2) * (this.bloatL >= 3 ? -1 : 1);
+			this.bloatR += Rand.intRange(0,2) * (this.bloatR >= 3 ? -1 : 1);
+		}
+	}
+	advance() {
+		this.x += Dir.add[this.head.facing].x;
+		this.y += Dir.add[this.head.facing].y;
+		this.z += this.head.slope;
+	}
+	getTurnOptions() {
+		let options = [];
+		let head = this.head;
+		if( this.getNext(Dir.left(head.facing),head.slope).isUnknown ) {
+			options.push('left');
+		}
+		if( this.getNext(Dir.right(head.facing),head.slope).isUnknown ) {
+			options.push('right');
+		}
+		if( this.getNext(Dir.straight(head.facing),head.slope).isUnknown ) {
+			options.push('straight');
+		}
+		console.assert( options.length > 0 );
+		return options;
+	}
+
+	step(blockId) {
+		this.head.dist--;
+		let hw = Math.floor(this.wStride/2);
+
+		for( let u=0 ; u<this.uStride ; +u ) {
+			this.advance();
+			for( let w=-hw ; w<=hw ; ++w ) {
+
+maybe this should be a rake
+				this.put(blockId);
+				this.nodeList.add( this.head );
+		}
+	}
+
+	buildPath() {
+		this.head.dist = 1;
+		this.step( "FLOOR" );
+
+		if( this.zTarget === null ) {
+			this.zTarget     = Rand.intRange(-5,5);
+			this.numSegments = Rand.intRange(1,4);
+			this.head.dist   = Rand.intRange(1,4);
+			this.head.facing = Dir.NORTH;
+		}
+		while( true ) {
+			this.slope = 0;
+			while( this.dist > 0 ) {
+				this.step('FLOOR');
+			}
+
+			// The path is winding at the current z.
+			if( this.numSegments > 0 ) {
+				let turn			= Rand.chance100(50) ? 'left' : 'right';
+				this.head.facing	= Dir[turn](this.facing);
+				// Interestingly, we can make sure that the 4th segment always has space
+				// in front of it if we look at the 2nd segment and we're at least 1 shorter than it.
+				// Or we can make sure that the 3rd segment is at least 1 longer than the 1st
+				this.head.dist		= Rand.intRange(1,4);
+				this.numSegments -= 1;
+				continue;
+			}
+
+			if( this.head.z == this.zTarget ) {
+				break;
+			}			
+
+			this.numSegments	= Rand.intRange(1,4);
+			this.head.dist		= Rand.intRange(1,4);
+			let rise			= (this.z<this.zTarget) ? 1 : -1;
+			this.head.slope		= rise * (this.vStride/this.uStride);
+			let turnOptions		= this.getTurnOptions();
+			let turn			= turnOptions[Rand.intRange(0,turnOptions.length-1)];
+			this.head.facing	= Dir[turn](this.head.facing);
+			this.step('STAIRS');
+
+			continue;
+		}
+	}
+	build() {
+		if( this.phase == 0 ) {
+			this.buildPath();
+		}
+		if( this.phase == 1 ) {
+			this.buildBloat();
+		}
+		if( this.phase == 2 ) {
+			this.buildStubs();
+		}
+	}
+*/
 
 
 	let Driver = {};
@@ -190,6 +310,15 @@ Module.add('dataWright',function() {
 			this.zoneList.list.push( newZone );
 			return newZone;
 		}
+		getBlock(x,y,z,block)  {
+			return this.map3d.getBlock( x, y, z );
+		}
+		setBlock(x,y,z,block) {
+			return this.map3d.setVal( x, y, z, block, this.zone.zoneId );
+		}
+		get mapAccess() {
+			return [this.getBlock.bind(this), this.setBlock.bind(this)];
+		}
 	}
 
 	Driver.StraightLine = class extends Driver.Base {
@@ -204,12 +333,12 @@ Module.add('dataWright',function() {
 			this.seedPriorityList = Object.values(SeedType);
 			Array.shuffle(this.seedPriorityList);
 
-			this.painter = new Painter.HallSquares({
+			this.hallBrush = new HallBrush.Squares({
 				driver: this,
 				head: this.head
 			});
-			this.painter.setCursor( new PaintCursor() );
-			this.painter.setPalette({});
+			this.hallBrush.attach( ...this.mapAccess );
+			this.hallBrush.setPalette({});
 
 			return this;
 		}
@@ -270,9 +399,6 @@ Module.add('dataWright',function() {
 		}
 		advancePath() {
 			let head = this.head;
-			let sheath = 1;
-			let capNear = 1;
-			let capFar  = 0;
 			let turn = head.turn;
 			let noSlope   = 0;
 			let cornerDist = head.width;
@@ -292,21 +418,21 @@ Module.add('dataWright',function() {
 			// this keeps things flat until we've made the corner section.
 			let slopeFn = dist => turn && dist<=cornerDist ? 0 : head.slope;
 			// set(dir,x,y,z,width,loft,dist,slope,sheath,cap)
-			let rake = new RakePath().set( head.facing, head.x, head.y, head.z, head.dist, head.loft, head.width, slopeFn, sheath, capNear, capFar );
+			let rake = new RakePath().set(
+				head.facing, head.x, head.y, head.z, head.dist, head.loft, head.width, slopeFn,
+				1, 1, 0
+			);
 
-			this.painter.begin( entryDist );
+			this.hallBrush.begin( entryDist );
 
 			console.log( 'head='+head.x+','+head.y );
 			rake.traverse( (x,y,z,dist,loft,i,flags) => {
 
-				this.painter.cursor.set( x, y, z, dist, loft, i, flags );
-				let block = this.painter.getBlock();
+				this.hallBrush.set( x, y, z, dist, loft, i, flags );
+				let blockId = this.hallBrush.determineBlockId();
 
-				console.assert(this.zone.zoneId>=0);
-				let curBlock = this.map3d.getBlock(x,y,z);
-				if( curBlock.isUnknown ) {
-					this.map3d.setVal(x,y,z,block,this.zone.zoneId);
-					if( head.isFoot(loft) && flags & FLAG.SHEATH ) {
+				if( this.hallBrush.putWeak(0,blockId) ) {
+					if( head.isFoot(loft) && (flags & FLAG.SHEATH) ) {
 						this.zone.stubCandidate.push({
 							x: x,
 							y: y,
@@ -380,15 +506,6 @@ Module.add('dataWright',function() {
 			return stubLayout;
 		}
 
-		getBlock(x,y,z,block)  {
-			return this.map3d.getBlock( x, y, z );
-		}
-
-		setBlock(x,y,z,block) {
-			return this.map3d.setVal( x, y, z, block );
-		}
-
-
 		buildStubs() {
 
 			let stubLayout = this.makeStubLayout( this.zone.stubCandidate, this.head );
@@ -416,19 +533,19 @@ Module.add('dataWright',function() {
 
 			//seed = SeedType.TEST;
 
-				let seedBrush = new SeedBrush( seed, this.head, this.getBlock.bind(this), this.setBlock.bind(this) );
-
+				let seedBrush = new SeedBrush( seed, this.head );
+				seedBrush.attach( ...this.mapAccess );
 				seedBrush.setPalette({});
 
-				rakeReach.traverse( seed.yLen, seed.xLen, -1, ( x, y, zOrigin, dist, sx, i ) => {
-					seedBrush.setCursor( x, y, zOrigin, dist, i );
-					if( dist < 0 ) {
+				rakeReach.traverse( seed.yLen, seed.xLen, -1, ( x, y, zOrigin, u, v, w ) => {
+					seedBrush.set( x, y, zOrigin, u, v, w );
+					if( u < 0 ) {
 						seedBrush.stroke( null );	// just for filling in walls beside pits
 						return;
 					}
-					let sy = seed.yLen - dist - 1;
-					let seedTile = seed.map2d.getTile(sx,sy);
-					let seedMarkup = seed.map2d.getZoneId(sx,sy);
+					let sy = seed.yLen - u - 1;
+					let seedTile   = seed.map2d.getTile(v,sy);
+					let seedMarkup = seed.map2d.getZoneId(v,sy);
 					seedBrush
 						.stroke( seedTile )
 						.markup( seedMarkup );
