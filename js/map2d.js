@@ -88,6 +88,7 @@ Module.add('map2d',function(extern) {
 			this.cx = cx;
 			this.cy = cy;
 			this.radius = radius;
+			return this;
 		}
 		get xMin() {
 			return this.cx-this.radius;

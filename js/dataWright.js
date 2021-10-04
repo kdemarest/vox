@@ -2,72 +2,6 @@ Module.add('dataWright',function() {
 
 	let Rand = Random.Pseudo;
 
-	class Node {
-		constructor() {
-			this.x = null
-			this.y = null;
-			this.z = null;
-			this.facing   = null;
-		}
-		set( x, y, z, facing ) {
-			console.assert( Coordinate.validateMany(x,y,z) );
-			console.assert( Dir.validate(facing) );
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			this.facing   = facing;
-			return this;
-		}
-		copy(nodeRef) {
-			return Object.assign( this, nodeRef );
-		}
-		move(dir,slope,dist=1) {
-			console.assert( Coordinate.validateValue(this.x) );
-			console.assert( Coordinate.validateValue(this.y) );
-			console.assert( Number.isInteger(dist) && dist >= 0 );
-			this.x += Dir.add[dir].x * dist;
-			this.y += Dir.add[dir].y * dist;
-			this.z += slope * dist;
-		}
-	}
-
-	class Head extends Node {
-		constructor() {
-			super();
-			this.dist     = null;
-			this.width    = 1;
-			this.loft     = 5;
-			this.slope    = 0;
-		}
-		get halfWidth() {
-			return Math.floor(this.width/2);
-		}
-		isEdge(i) {
-			return i==-this.halfWidth || i==this.halfWidth;
-		}
-		isCeiling(loft) {
-			return loft==this.loft-1;
-		}
-		isFoot(loft) {
-			return loft == 0;
-		}
-		set( x, y, z, facing, dist, width, loft, slope ) {
-			super.set( x, y, z, facing );
-			console.assert( Number.isInteger(dist) && dist >= 0 );
-			console.assert( Number.isInteger(width) && width >=1 );
-			console.assert( Number.isInteger(loft) && loft >=1 );
-			console.assert( Number.isFinite(slope) );
-			this.dist     = dist;
-			this.width    = width;
-			this.loft     = loft;
-			this.slope    = slope;
-			return this;
-		}
-		advance(dist=1) {
-			return this.move( this.facing, this.slope, dist );
-		}
-	}
-
 	class NodeList {
 		constructor() {
 			this.nodeList = [];
@@ -157,127 +91,6 @@ Module.add('dataWright',function() {
 			return this;
 		}
 	}
-/*
-Driver.Room = class extends Driver.Base {
-	constructor() {
-		this.phase = 0;
-		this.zTarget = null;
-		this.numSegments = null;
-		this.uStride = 5;
-		this.vStride = 5;
-		this.wStride = 5;
-
-		this.brush = new HallBrush.Squares({
-			driver: this,
-			head: this.head
-		});
-		this.brush.attachCursor( this.createBrushCursor() );
-		this.brush.setPalette({});
-	}
-
-	onBloatStep() {
-		if( justTurned ) {
-			this.bloatL = Rand.intRange(0,3);
-			this.bloatR = Rand.intRange(0,3);
-			if( Rand.chance100(50) ) this.squareTheCorner();
-		}
-		if( Rand.chance100(33) ) {
-			this.bloatL += Rand.intRange(0,2) * (this.bloatL >= 3 ? -1 : 1);
-			this.bloatR += Rand.intRange(0,2) * (this.bloatR >= 3 ? -1 : 1);
-		}
-	}
-	advance() {
-		this.x += Dir.add[this.head.facing].x;
-		this.y += Dir.add[this.head.facing].y;
-		this.z += this.head.slope;
-	}
-	getTurnOptions() {
-		let options = [];
-		let head = this.head;
-		if( this.getNext(Dir.left(head.facing),head.slope).isUnknown ) {
-			options.push('left');
-		}
-		if( this.getNext(Dir.right(head.facing),head.slope).isUnknown ) {
-			options.push('right');
-		}
-		if( this.getNext(Dir.straight(head.facing),head.slope).isUnknown ) {
-			options.push('straight');
-		}
-		console.assert( options.length > 0 );
-		return options;
-	}
-
-	step(blockId) {
-		this.head.dist--;
-		let hw = Math.floor(this.wStride/2);
-
-		for( let u=0 ; u<this.uStride ; +u ) {
-			this.advance();
-			for( let w=-hw ; w<=hw ; ++w ) {
-
-maybe this should be a rake
-				this.put(blockId);
-				this.nodeList.add( this.head );
-		}
-	}
-
-	buildPath() {
-		this.head.dist = 1;
-		this.step( "FLOOR" );
-
-		if( this.zTarget === null ) {
-			this.zTarget     = Rand.intRange(-5,5);
-			this.numSegments = Rand.intRange(1,4);
-			this.head.dist   = Rand.intRange(1,4);
-			this.head.facing = Dir.NORTH;
-		}
-		while( true ) {
-			this.slope = 0;
-			while( this.dist > 0 ) {
-				this.step('FLOOR');
-			}
-
-			// The path is winding at the current z.
-			if( this.numSegments > 0 ) {
-				let turn			= Rand.chance100(50) ? 'left' : 'right';
-				this.head.facing	= Dir[turn](this.facing);
-				// Interestingly, we can make sure that the 4th segment always has space
-				// in front of it if we look at the 2nd segment and we're at least 1 shorter than it.
-				// Or we can make sure that the 3rd segment is at least 1 longer than the 1st
-				this.head.dist		= Rand.intRange(1,4);
-				this.numSegments -= 1;
-				continue;
-			}
-
-			if( this.head.z == this.zTarget ) {
-				break;
-			}			
-
-			this.numSegments	= Rand.intRange(1,4);
-			this.head.dist		= Rand.intRange(1,4);
-			let rise			= (this.z<this.zTarget) ? 1 : -1;
-			this.head.slope		= rise * (this.vStride/this.uStride);
-			let turnOptions		= this.getTurnOptions();
-			let turn			= turnOptions[Rand.intRange(0,turnOptions.length-1)];
-			this.head.facing	= Dir[turn](this.head.facing);
-			this.step('STAIRS');
-
-			continue;
-		}
-	}
-	build() {
-		if( this.phase == 0 ) {
-			this.buildPath();
-		}
-		if( this.phase == 1 ) {
-			this.buildBloat();
-		}
-		if( this.phase == 2 ) {
-			this.buildStubs();
-		}
-	}
-*/
-
 
 	let Driver = {};
 
@@ -321,130 +134,259 @@ maybe this should be a rake
 		}
 	}
 
+	class Membrane {
+		// Varieties: vac-pak, toEdges, baloon, varied
+	}
+
+	class Supports {
+		// Types: fillBelow, hollowBelow, columnsBelow, chainsAbove, arches
+		build() {
+
+		}
+	}
+
+	class RoomMaker {
+		constructor() {
+			this.zTarget = null;
+			this.numSegments = null;
+			// Using strides of 1, 3, 5, or 7 gives you a 'center square'
+			this.uStride = this.vStride = this.wStride = null;
+		}
+		init(head,roomBrush,roomControls) {
+			this.head = head;
+			this.roomBrush = roomBrush;
+			this.roomControls = roomControls;
+			this.uStride = this.roomControls.uStride;
+			this.vStride = this.roomControls.vStride;
+			this.wStride = this.roomControls.wStride;
+			this.nodeList = new NodeList();
+			this.extents = null;
+
+			return this;
+		}
+
+		onBloatStep() {
+			if( justTurned ) {
+				this.bloatL = Rand.intRange(0,3);
+				this.bloatR = Rand.intRange(0,3);
+				if( Rand.chance100(50) ) this.squareTheCorner();
+			}
+			if( Rand.chance100(33) ) {
+				this.bloatL += Rand.intRange(0,2) * (this.bloatL >= 3 ? -1 : 1);
+				this.bloatR += Rand.intRange(0,2) * (this.bloatR >= 3 ? -1 : 1);
+			}
+		}
+		advance() {
+			this.x += Dir.add[this.head.facing].x;
+			this.y += Dir.add[this.head.facing].y;
+			this.z += this.head.slope;
+		}
+		detectClear(dir,slope) {
+			let head = this.head;
+			let rake = new RakePath();
+			rake.set(
+				head.facing, head.x, head.y, head.z, this.uStride, this.vStride, this.wStride, head.slope,
+				0, 1, 0, 0
+			);
+			let isClear = true;
+			rake.traverse( (x,y,z,u,v,w,flag) => {
+				this.roomBrush.set(x,y,z,u,v,w);
+				if( !this.roomBrush.get(0).isUnknown ) {
+					isClear = false;
+					return false;
+				}
+			});
+			return true; //isClear;
+		}
+		getTurnOptions() {
+			let options = [];
+			let head = this.head;
+			if( this.detectClear(Dir.left(head.facing),head.slope) ) {
+				options.push('left');
+			}
+			if( this.detectClear(Dir.right(head.facing),head.slope) ) {
+				options.push('right');
+			}
+			if( this.detectClear(Dir.straight(head.facing),head.slope) ) {
+				options.push('straight');
+			}
+			console.assert( options.length > 0 );
+			return options;
+		}
+
+		step(blockId,extraFlags) {
+			let head = this.head;
+			let node = head.copySelf();
+			if( head.dist == 1 ) {
+				extraFlags[this.numSegments==0 ? 'isExit' : 'isCorner'] = true;
+			}
+			extraFlags.level = (head.z-this.entryLevel)/this.vStride;
+
+			Object.assign( node, extraFlags );
+			this.nodeList.add( node );
+			let rake = new RakePath().set(
+				head.facing, head.x, head.y, head.z, this.uStride/*head.dist*/, 1/*head.loft*/, head.width, head.slope,
+				0, 1, 0, 0
+			);
+
+			this.roomBrush.begin();
+
+			rake.traverse( (x,y,z,u,v,w,flags) => {
+				this.roomBrush.set( x, y, z, u, v, w, flags );
+				if( flags & FLAG.FLOOR ) {
+					let blockId = "DIRT"; //this.hallBrush.determineBlockId();
+					this.roomBrush.putWeak(-1,blockId);
+					if( w==0 && u==1) {
+						this.roomBrush.putWeak( 3,'TORCH');
+					}
+					this.extents.extend(x,y,z);
+				}
+			});
+			head.move( head.facing, head.slope, this.uStride );
+			head.z = rake.z;
+			head.dist -= this.uStride;
+		}
+
+		makeTurn(turn) {
+			this.head.move( this.head.facing, 0, -(Math.floor(this.uStride/2)+1) );
+			this.head.facing = Dir[turn](this.head.facing);
+			this.head.move( this.head.facing, 0, Math.floor(this.uStride/2)+1 );
+		}
+
+		buildRoomPath() {
+			let head = this.head;
+			let rc   = this.roomControls;
+			this.extents = new Rect3d().set(head.x,head.y,head.z,0,0,0);
+			let maxReps = 3*4*5;
+
+			head.facing = Dir.EAST;
+			head.width = this.wStride;
+			head.loft  = this.vStride;
+			head.dist  = this.roomControls.rgPathDist.roll();
+			head.slope = 0;
+
+			this.zEntry		 = head.z;
+			this.zTarget     = head.z + (rc.rgZTarget.roll() * this.vStride);
+			this.numSegments = rc.rgNumSegments.roll();
+			this.zTall       = Math.max(head.z,this.zTarget) + (rc.ctTall.test() ? this.vStride+rc.rgTall.roll() : this.vStride);
+			this.zDeep       = Math.min(head.z,this.zTarget) - (rc.ctDeep.test() ? rc.rgDeep.roll() : 0);
+			this.extents.extend( head.x, head.y, this.zTall );
+			this.extents.extend( head.x, head.y, this.zDeep );
+
+			this.step( "FLOOR", {isFloor: true, isEntry: true});
+
+			while( true && maxReps-- > 0) {
+				head.slope = 0;
+				while( head.dist > 0 ) {
+					this.step('FLOOR', {isFloor: true});
+				}
+
+				// The path is winding at the current z.
+				if( this.numSegments > 0 ) {
+					let turn = this.roomControls.pickSegmentTurn();
+					this.makeTurn(turn);
+					// Interestingly, we can make sure that the 4th segment always has space
+					// in front of it if we look at the 2nd segment and we're at least 1 shorter than it.
+					// Or we can make sure that the 3rd segment is at least 1 longer than the 1st
+					head.dist		= this.roomControls.rgPathDist.roll();
+					this.numSegments -= 1;
+					continue;
+				}
+
+				if( head.z == this.zTarget ) {
+					break;
+				}			
+
+				this.numSegments	= this.roomControls.rgNumSegments.roll();
+				// Note that we always add 1 here, to accomodate the stairs and the fact that
+				// all stairs need a landing afterwards.
+				head.dist			= 1+this.roomControls.rgPathDist.roll();
+				let rise			= (this.z<this.zTarget) ? 1 : -1;
+				head.slope			= rise * (this.vStride/this.uStride);
+				let turnOptions		= this.getTurnOptions();
+				let turn			= turnOptions[Rand.intRange(0,turnOptions.length)];
+				this.makeTurn(turn);
+				this.roomBrush.put( 2, 'TORCH' );
+				this.step('STAIRS', {isStairs: true});
+				continue;
+			}
+		}
+
+		buildMembrane() {
+			let x = this.extents.xMin;
+			let y = this.extents.yHalf;
+			let z = this.zDeep;
+			let rake = new RakePath().set(
+				Dir.EAST,
+				this.extents.xMin, this.extents.yHalf, this.extents.zMin,
+				this.extents.xLen, this.extents.zLen, this.extents.yLen, 0,
+				1, 1, 1, 1 );
+			let wallFlags = (FLAG.START | FLAG.END | FLAG.LWALL | FLAG.RWALL);
+			rake.traverse( (x,y,z,u,v,w,flags) => {
+				this.roomBrush.set(x,y,z,u,v,w,flags);
+				if( flags & wallFlags ) {
+					this.roomBrush.putWeak( 0, this.roomBrush.bWall );
+				}
+				if( flags & FLAG.ROOF ) {
+					this.roomBrush.putWeak( 0, this.roomBrush.bRoof );
+				}
+				if( flags & FLAG.FLOOR ) {
+					this.roomBrush.putWeak( 0, this.roomBrush.bFloor );
+				}
+			});
+		}
+
+		buildSupports() {
+		}
+	}
+
+	let roomControlsDefault = ()=>{
+		let uStride = 3;
+		let vStride = 3;
+		let wStride = 3;
+		let leftLean = 80;
+		return {
+			uStride:			uStride,
+			vStride:			vStride,
+			wStride:			wStride,
+			rgZTarget:			new Roller.Range(-3,-3,'intRange'), //-5,5,'intBell'),
+			rgPathDist:			new Roller.Range(1,2,'intRange',0,uStride),
+			rgNumSegments:		new Roller.Range(1,2,'intRange'),
+			pickSegmentTurn:	()=>Rand.chance100(leftLean) ? 'left' : 'right',
+			ctTall:				new Roller.ChanceTo(50),
+			rgTall:				new Roller.Range(3,vStride*3,'intRange'),
+			ctDeep:				new Roller.ChanceTo(50),
+			rgDeep:				new Roller.Range(1,vStride*3),
+		}
+	}
+
+
 	Driver.StraightLine = class extends Driver.Base {
 		init(map3d,pathLength,pathControls) {
 			this.map3d = map3d;
 			// set( x, y, z, facing, dist, width, loft, slope )
-			let aLittleDistanceToAllowStubs = 4;
-			this.head.set( this.map3d.xMin+aLittleDistanceToAllowStubs, this.map3d.yHalf, this.map3d.zHalf, Dir.EAST, 0, 3, 5, 0 );
-			this.facingForbidden = Dir.reverse(this.head.facing);
+			let aLittleDistanceToAllowStubs = 8*5;
+			this.head.set(
+				this.map3d.xMin+aLittleDistanceToAllowStubs,
+				this.map3d.yHalf,
+				this.map3d.zHalf,
+				Dir.EAST, 0, 3, 5, 0 );
 			this.pathControls = Object.assign( new PathControls().setDefaults(), pathControls );
 			this.remaining    = pathLength;
-			this.seedPriorityList = Object.values(SeedType);
-			Array.shuffle(this.seedPriorityList);
 
-			this.hallBrush = new HallBrush.Squares({
-				driver: this,
-				head: this.head
-			});
-			this.hallBrush.attach( ...this.mapAccess );
-			this.hallBrush.setPalette({});
+			let hallBrush = new HallBrush.Squares({ driver: this, head: this.head });
+			hallBrush.attach( ...this.mapAccess );
+			hallBrush.setPalette({});
+
+			let roomBrush = new Brush.Base({});
+			roomBrush.attach( ...this.mapAccess );
+			roomBrush.setPalette({});
+
+			this.hallMaker = new HallMaker().init(this.head.facing,hallBrush);
+			this.stubMaker = new StubMaker().init();
+			this.roomMaker = new RoomMaker().init(this.head,roomBrush,roomControlsDefault());
 
 			return this;
-		}
-		findSafeTurn(facing) {
-			let left  = Dir.left(facing);
-			let right = Dir.right(facing);
-			let turn;
-			if( left == this.facingForbidden ) {
-				turn = 'right';
-			}
-			else
-			if( right == this.facingForbidden ) {
-				turn = 'left';
-			}
-			else {
-				turn = Rand.chance100(50) ? 'left' : 'right';
-			}
-			return turn;
-		}
-		steer() {
-			let p = this.pathControls;
-			let head = this.head;
-			let lastSlope = head.last ? head.last.slope : 0;
-			console.log('lastSlope='+lastSlope);
-			head.last = (new Head()).copy(head);
-
-			let dist      = p.rgDist.roll();
-			let turn      = p.ctTurn.test();
-			let slopeMult = (p.ctRise.test() && lastSlope >=0) ? 1 : (p.ctFall.test() && lastSlope<=0) ? -1 : 0;
-			let slope     = p.rgSlope.roll() * slopeMult;
-			let loft      = p.ctRoof.test() ? p.rgRoof.roll() : head.loft;
-
-
-			let width;
-			if( !turn ) {
-				width = Math.max(p.rgWidth.min,head.width);
-			}
-			else {
-				width = p.ctWiden.test() || head.width<p.rgWidth.min ? p.rgWidth.roll() : head.width;
-				dist = Math.max(width+1,dist);
-			}
-			turn = !turn ? turn : this.findSafeTurn(head.facing);
-
-			let wallToggle = !this.zone ? true : !this.zone.wallToggle;
-			let zone = this.zoneCreate();
-			zone.wallToggle = wallToggle;
-			head.zoneId = zone.zoneId;
-
-			head.total  = dist;
-			head.dist   = dist;
-			head.turn   = turn;
-			head.width  = width;
-			head.loft   = loft;
-			head.slope  = slope;
-			// Note that head.facing does not change yet.
-
-			console.log( "Steer dist="+head.dist+" width="+head.width );
-		}
-		advancePath() {
-			let head = this.head;
-			let turn = head.turn;
-			let noSlope   = 0;
-			let cornerDist = head.width;
-			let entryDist  = !head.last ? 0 : head.last.width;
-
-			console.log("head root = "+head.x+','+head.y);
-			// This actually changes the facing.
-			if( turn ) {
-				console.log("turning");
-				let cornerHalf = Math.floor(cornerDist/2);
-				head.move(head.facing,noSlope,cornerHalf);
-				head.facing = Dir[turn](head.facing);
-				let entryHalf = Math.floor(entryDist/2);
-				head.move(Dir.reverse(head.facing),noSlope,entryHalf);
-			}
-
-			// this keeps things flat until we've made the corner section.
-			let slopeFn = dist => turn && dist<=cornerDist ? 0 : head.slope;
-			// set(dir,x,y,z,width,loft,dist,slope,sheath,cap)
-			let rake = new RakePath().set(
-				head.facing, head.x, head.y, head.z, head.dist, head.loft, head.width, slopeFn,
-				1, 1, 0
-			);
-
-			this.hallBrush.begin( entryDist );
-
-			console.log( 'head='+head.x+','+head.y );
-			rake.traverse( (x,y,z,dist,loft,i,flags) => {
-
-				this.hallBrush.set( x, y, z, dist, loft, i, flags );
-				let blockId = this.hallBrush.determineBlockId();
-
-				if( this.hallBrush.putWeak(0,blockId) ) {
-					if( head.isFoot(loft) && (flags & FLAG.SHEATH) ) {
-						this.zone.stubCandidate.push({
-							x: x,
-							y: y,
-							z: z,
-							facing: i<0 ? Dir.left(head.facing) : Dir.right(head.facing),
-							u: dist,
-							uToEnd: head.dist-dist
-						});
-					}
-				}
-			});
-			head.zFinal = rake.zFinal;
 		}
 
 		advanceHead() {
@@ -463,110 +405,35 @@ maybe this should be a rake
 				return false;
 			}
 			if( this.head.dist <= 0 ) {
-				this.steer();
+				this.zoneCreate();
+				this.hallMaker.steer(this.head,this.zone.zoneId,this.pathControls);
 			}
 
-			this.advancePath();
-		}
-
-		makeStubLayout(stubCandidate,head) {
-			let StubLayoutType = [
-				// Straight from the corner
-				// To the side at the corner
-				// Repeating with periodicity 4, 6, 8, or 10... on one side or both
-				[0.5],
-				[0.5,'across'],
-				[0.33,0.66],
-				[0.33,'across',0.66,'across']
-			];
-			let symmetric = Rand.chance100(50);
-
-			let stubLayout = [];
-
-			// WARNING!!! THIS IS VERY HARD CODED. It should be responsive to head dist...
-			let max = head.dist > 16 ? 4 : 2;
-			let layoutType = StubLayoutType[ Rand.intRange( 0, max ) ];
-			let cursorIndex = null;
-			layoutType.forEach( n => {
-				let isAcross = false;
-				if( Number.isFinite(n) ) {
-					cursorIndex = Math.floor(stubCandidate.length/2);
+			this.hallMaker.advancePath(
+				this.head,
+				stubCandidate => {
+					this.zone.stubCandidate.push(stubCandidate);
 				}
-				else
-				if( n == 'across' ) {
-					cursorIndex += stubCandidate[cursorIndex+1].x == stubCandidate[cursorIndex].x || stubCandidate[cursorIndex+1].y == stubCandidate[cursorIndex].y ? 1 : -1;
-					isAcross = true;
-				}
-				let stub = Object.assign( {}, stubCandidate[cursorIndex] );
-				stub.index = cursorIndex;
-				stub.symmetric = !isAcross && symmetric;
-				stub.across = isAcross;
-				stubLayout.push( stub );
-			});
-			return stubLayout;
+			);
 		}
 
 		buildStubs() {
+			this.stubMaker.buildStubs(this.map3d,this.zone.stubCandidate,this.head,this.mapAccess);
+		}
 
-			let stubLayout = this.makeStubLayout( this.zone.stubCandidate, this.head );
-			let preferSeed = null;
-
-			for( let index = 0 ; index < stubLayout.length ; ++index ) {
-				let stub = stubLayout[index];
-				//debugger;
-				let rakeReach = (new RakeReach()).set( stub.facing, stub.x, stub.y, stub.z );
-				let reach = rakeReach.detect(this.map3d,stub.u,stub.uToEnd);
-				let seedList = this.seedPriorityList.filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
-
-				//console.log('picking from '+seedList.length+' seeds.' );
-				if( seedList.length <= 0 ) {
-					return false;
-				}
-				let seed = seedList[0];
-				if( preferSeed && seedList.find( s => s.id==preferSeed.id ) ) {
-					seed = preferSeed;
-				}
-				// Now, since we just used this seed, yank it out of the array and jam it at the end.
-				let seedIndex = this.seedPriorityList.find( curSeed => curSeed.id == seed.id );
-				this.seedPriorityList.splice(seedIndex,1);
-				this.seedPriorityList.push(seed);
-
-			//seed = SeedType.TEST;
-
-				let seedBrush = new SeedBrush( seed, this.head );
-				seedBrush.attach( ...this.mapAccess );
-				seedBrush.setPalette({});
-
-				rakeReach.traverse( seed.yLen, seed.xLen, -1, ( x, y, zOrigin, u, v, w ) => {
-					seedBrush.set( x, y, zOrigin, u, v, w );
-					if( u < 0 ) {
-						seedBrush.stroke( null );	// just for filling in walls beside pits
-						return;
-					}
-					let sy = seed.yLen - u - 1;
-					let seedTile   = seed.map2d.getTile(v,sy);
-					let seedMarkup = seed.map2d.getZoneId(v,sy);
-					seedBrush
-						.stroke( seedTile )
-						.markup( seedMarkup );
-					;
-				});
-
-				preferSeed = !stub.across && (seed.symmetric || stub.symmetric) ? seed : null;
-				if( preferSeed && (index+1 >= stubLayout.length || !stubLayout[index+1].across) ) {
-					let stubCan = this.zone.stubCandidate;
-					let symIndex = stub.index + (stubCan[stub.index+1].x == stubCan[stub.index].x || stubCan[stub.index+1].y == stubCan[stub.index].y ? 1 : -1);
-					let symStub = Object.assign( {}, stubCan[symIndex] );
-					symStub.index = symIndex;
-					symStub.across = true;
-					stubLayout.splice( index+1, 0, symStub );
-				}
-			}
+		buildRoom() {
+			//debugger;
+			this.zoneCreate();
+			this.roomMaker.buildRoomPath();
+			//this.roomMaker.buildBloat();
+			this.roomMaker.buildMembrane();
+			this.remaining = 0;
 		}
 
 		advance() {
-			this.buildPath();
-			this.buildStubs();
+			//this.buildPath();
+			//this.buildStubs();
+			this.buildRoom();
 			this.advanceHead();
 			//return result;
 		}
@@ -590,11 +457,6 @@ maybe this should be a rake
 				}
 				this._renderFn(this.map3d);
 			}
-
-//			if( !this.driver.isDone ) {
-//				this.driver.advance();
-//				this._renderFn(this.map);
-//			}
 		}
 	}
 

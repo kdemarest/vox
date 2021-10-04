@@ -152,6 +152,8 @@ Module.add('brush',function() {
 				}
 			}
 		}
+		begin() {
+		}
 		sample2d(textureName,u,v,uStride,vStride) {
 			if( !this.textureHash[textureName] ) {
 				let t = new TextMapParser( this[textureName].textMap );

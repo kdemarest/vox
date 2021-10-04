@@ -9,10 +9,12 @@ Module.add('rake',function() {
 		END:	32,
 		EDGE:	64,
 		SHEATH:	128,
+		CORNER:	256,
+		STAIRS:	512,
 	};
 
 	class Rake {
-		set(dir,x,y,z,width,loft,sheath=0) {
+		set(dir,x,y,z,width,loft,sheathXY=0,sheathZ=0) {
 			console.assert( Dir.validate(dir) );
 			console.assert( Coordinate.validateMany(x,y,z) );
 			console.assert( Number.isInteger(width) && width > 0 && width < 1000 );
@@ -24,29 +26,31 @@ Module.add('rake',function() {
 			this.z = z;
 			this.width = width;
 			this.loft = loft;
-			this.sheath = sheath;
+			this.sheathXY = sheathXY;
+			this.sheathZ = sheathZ;
 			return this;
 		}
 		get halfWidth() {
 			return Math.floor(this.width/2);
 		}
-		stripe(fn,z=this.z,dist=0,distTotal=0) {
+		stripe(fn,dist=0,distTotal=0) {
 			let ahead = Dir.add[this.dir];
 			let right = Dir.add[Dir.right(this.dir)];
 			let hw = this.halfWidth;
-			let x = this.x + ahead.x*dist - right.x*(hw+this.sheath);
-			let y = this.y + ahead.y*dist - right.y*(hw+this.sheath);
-			let flagSE = (dist<0 ? FLAG.START : 0) | (dist>distTotal ? FLAG.END : 0);
+			let x = this.x + ahead.x*dist - right.x*(hw+this.sheathXY);
+			let y = this.y + ahead.y*dist - right.y*(hw+this.sheathXY);
+			let z = this.z;
+			let flagSE = (dist<0 ? FLAG.START : 0) | (dist>=distTotal ? FLAG.END : 0);
 
-			for( let i=-(hw+this.sheath) ; i<=hw+this.sheath ; ++i ) {
+			for( let i=-(hw+this.sheathXY) ; i<=hw+this.sheathXY ; ++i ) {
 				let flagLR = flagSE;
 				flagLR |= (i==-hw || i==hw) ? FLAG.EDGE : 0;
 				flagLR |= (i<-hw || i>hw) ? FLAG.SHEATH : 0;
 				flagLR |= (i<-hw ? FLAG.LWALL : 0) | (i>hw ? FLAG.RWALL : 0 );
-				for( let loft = -this.sheath ; loft<this.loft+this.sheath ; ++loft ) {
+				for( let loft = -this.sheathZ ; loft<this.loft+this.sheathZ ; ++loft ) {
 					let flags = flagLR;
-					flags |= (loft<0 ? FLAG.FLOOR : 0) | (loft>this.loft-1 ? FLAG.ROOF : 0);
-					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),dist,loft,i,flags,);
+					flags |= (loft==-1 ? FLAG.FLOOR : 0) | (loft>this.loft-1 ? FLAG.ROOF : 0);
+					let ok = fn(Math.floor(x),Math.floor(y),Math.floor(z+loft),dist,loft,i,flags);
 					if( ok === false ) {
 						return false;
 					}
@@ -56,32 +60,31 @@ Module.add('rake',function() {
 			}
 		}
 		traverse(fn) {
-			return this.stripe(fn,this.z,0,0);
+			return this.stripe(fn,0,0);
 		}
 	}
 
 	class RakePath extends Rake {
-		set(dir,x,y,z,dist,loft,width,slope,sheath,capNear,capFar) {
-			super.set(dir,x,y,z,width,loft,sheath);
+		set(dir,x,y,z,dist,loft,width,slope,sheathXY,sheathZ,capNear,capFar) {
+			super.set(dir,x,y,z,width,loft,sheathXY,sheathZ);
 			console.assert( Number.isInteger(dist) && dist >= 0 );
 			console.assert( typeof slope=='function' || (Number.isFinite(slope) && slope >= -9999 && slope <= 9999) );
-			this.dist      = dist;
-			this.slope     = slope;
-			this.capNear = capNear;
-			this.capFar  = capFar;
-			this.zFinal = null;
+			this.dist		= dist;
+			this.slope		= slope;
+			this.capNear	= capNear;
+			this.capFar		= capFar;
 			return this;
 		}
 		traverse(fn) {
-			let z = this.z;
+			console.log('this.z=',this.z);
 			for( let dist=-this.capNear ; dist<this.dist+this.capFar ; ++dist ) {
-				this.zFinal = z;
-				let ok = this.stripe( fn, z, dist, this.dist );
+				this.z += (typeof this.slope == 'function') ? this.slope(dist) : this.slope;
+				console.log('after slope this.z=',this.z);
+				let ok = this.stripe( fn, dist, this.dist );
 				if( ok === false ) {
 					return false;
 				}
 
-				z += (typeof this.slope == 'function') ? this.slope(dist) : this.slope;
 			}
 		}
 	}

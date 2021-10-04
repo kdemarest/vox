@@ -24,6 +24,7 @@ Module.add('map3d',function(extern) {
 			this.xLen = xLen;
 			this.yLen = yLen;
 			this.zLen = zLen;
+			return this;
 		}
 		get xMin() { return this.x; }
 		get xMax() { return this.x+this.xLen-1; }

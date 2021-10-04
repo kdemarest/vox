@@ -12,9 +12,12 @@
 <!-- Modules -->
 <script src="js/jquery.3.3.1.js" charset="utf-8"></script>
 <script src="js/glMatrix-1.2.min.js" type="text/javascript"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
 
-<script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+<!-- https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js -->
+<script src="js/jimp.js" charset="utf-8"></script>
+
+<!-- https://webglfundamentals.org/webgl/resources/webgl-utils.js -->
+<script src="js/webgl-utils.js"></script>
 <script src="js/utilModule.js" type="text/javascript"></script>
 <script src="js/utilPlugin.js" type="text/javascript"></script>
 <script src="js/utilities.js" type="text/javascript"></script>
@@ -46,6 +49,9 @@
 <script src="js/brushHall.js" charset="utf-8"></script>
 <script src="js/brushSeed.js" charset="utf-8"></script>
 <script src="js/seed.js" charset="utf-8"></script>
+<script src="js/makerHall.js" charset="utf-8"></script>
+<script src="js/head.js" charset="utf-8"></script>
+<script src="js/makerStub.js" charset="utf-8"></script>
 <script src="js/dataWright.js" charset="utf-8"></script>
 <script src="js/path.js" charset="utf-8"></script>
 <script src="js/place.js" charset="utf-8"></script>
@@ -69,8 +75,6 @@
 <script src="js/player.js" type="text/javascript"></script>
 <script src="js/playerControls.js" type="text/javascript"></script>
 <script src="js/game.js" type="text/javascript"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jimp/0.14.0/jimp.js" charset="utf-8"></script>
 
 </head>
 
@@ -226,7 +230,7 @@ RoomBrush
 	let player = new Player();
 	player.body.setWorld( world );
 	player.viewMaterial.setMaterialSelector( "materialSelector" );
-	//player.body.collide = false;
+	player.body.collide = false;
 
 	let canvas = document.getElementById('renderSurface');
 	let controls = new PlayerControls(canvas,player.body);

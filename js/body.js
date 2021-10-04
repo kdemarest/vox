@@ -150,8 +150,8 @@ Module.add('body',function(){
 					}
 
 					if( this.up ) {
-						impulse.z += this.up;
-						velocity.z = velocity.z * 0.0 + impulse.z;
+						pos.z += this.up;
+						//velocity.z = velocity.z * 0.0 + impulse.z;
 					}
 
 					} catch(e) {
