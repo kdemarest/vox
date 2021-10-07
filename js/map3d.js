@@ -26,6 +26,16 @@ Module.add('map3d',function(extern) {
 			this.zLen = zLen;
 			return this;
 		}
+		setMinMax(xMin,yMin,zMin,xMax,yMax,zMax) {
+			Coordinate.validateMany(xMin,yMin,zMin,xMax,yMax,zMax);
+			this.x = Math.min(xMin,xMax);
+			this.y = Math.min(yMin,yMax);
+			this.z = Math.min(zMin,zMax);
+			this.xLen = Math.abs(xMax-xMin)+1;
+			this.yLen = Math.abs(yMax-yMin)+1;
+			this.zLen = Math.abs(zMax-zMin)+1;
+			return this;
+		}
 		get xMin() { return this.x; }
 		get xMax() { return this.x+this.xLen-1; }
 		get yMin() { return this.y; }
@@ -80,6 +90,76 @@ Module.add('map3d',function(extern) {
 		}
 	}
 
+	class OrientedRect3d {
+		set(xOrigin,yOrigin,zOrigin,facing,length,width,zDeep,zTall) {
+			Coordinate.validateMany(xOrigin,yOrigin,zOrigin,length,width,zDeep,zTall);
+			this.xOrigin = xOrigin;
+			this.yOrigin = yOrigin;
+			this.zOrigin = zOrigin;
+			this.facing  = facing;
+			this.length  = length;
+			this.width   = width;
+			this.zDeep   = zDeep;
+			this.zTall   = zTall;
+			this._rect3d = null;
+			return this;
+		}
+		get halfWidth() {
+			return Math.floor(this.width/2);
+		}
+		validate() {
+			console.assert( Coordinate.validateValue(this.xOrigin) );
+			console.assert( Coordinate.validateValue(this.yOrigin) );
+			console.assert( Coordinate.validateValue(this.zOrigin) );
+			console.assert( Coordinate.validateValue(this.length) );
+			console.assert( Coordinate.validateValue(this.width) );
+			console.assert( Coordinate.validateValue(this.zDeep) );
+			console.assert( Coordinate.validateValue(this.zTall) );
+		}
+		toCoord(u,v,w) {
+			let x = this.xOrigin + (Dir.add[this.facing].x * u) + (Dir.add[Dir.right(this.facing)].x * w);
+			let y = this.yOrigin + (Dir.add[this.facing].y * u) + (Dir.add[Dir.right(this.facing)].y * w);
+			let z = this.zOrigin + v;
+			return [x,y,z];
+		}
+		get rect3d() {
+			if( !this._rect3d ) {
+				let c0 = this.toCoord(0,this.zDeep,-this.halfWidth);
+				let c1 = this.toCoord(this.length,this.zTall,this.halfWidth);
+				this.cachedRect = new Rect3d().set(
+					Math.min(c0[0],c1[0]),
+					Math.min(c0[1],c1[1]),
+					Math.min(c0[2],c1[2]),
+					Math.abs(c0[0]-c1[0])+1,
+					Math.abs(c0[1]-c1[1])+1,
+					Math.abs(c0[2]-c1[2])+1
+				);
+			}
+			return this._rect3d;
+		}
+		containsXYZ(x,y,z) {
+			let r = this.rect3d;
+			return r.contains(x,y,z);
+		}
+		containsUVW(u,v,w) {
+			return u>=0 && u<this.length && w>=-this.halfWidth && w>=this.halfWidth && v>=this.zDeep && v<=this.zTall;
+		}
+		traverseXYZ(fn) {
+			return this.rect3d.traverse(fn);
+		}
+		traverseUVW(fn) {
+			let count = 0;
+			for( let u=0 ; u<this.length ; ++u ) {
+				for( let w=-this.halfWidth ; w<=this.halfWidth ; ++w ) {
+					for( let v=this.zDeep ; v<this.zTall ; ++v ) {
+						count += fn(u,v,w,this) ? 1 : 0
+					}
+				}
+			}
+			return count;
+		}
+	}
+
 	class Map3d extends Rect3d {
 		constructor(blockType) {
 			super();
@@ -112,7 +192,7 @@ Module.add('map3d',function(extern) {
 			}
 			return key===undefined ? this.spot[x][y][z] : this.spot[x][y][z][key];
 		}
-		setVal(x,y,z,block,zoneId) {
+		setVal(x,y,z,...keyValuePair) {
 			console.assert( Coordinate.validateMany(x,y,z) );
 			x = Math.floor(x);
 			y = Math.floor(y);
@@ -121,21 +201,14 @@ Module.add('map3d',function(extern) {
 			this.spot[x] = this.spot[x] || [];
 			this.spot[x][y] = this.spot[x][y] || [];
 			this.spot[x][y][z] = this.spot[x][y][z] || {};
-			if( block !== null && block !== undefined ) {
-				this.spot[x][y][z].block = block;
-			}
-			if( zoneId !== null && zoneId !== undefined ) {
-				this.spot[x][y][z].zoneId = zoneId;
+			for( let i=0 ; i < keyValuePair.length ; i += 2 ) {
+				let key		= keyValuePair[i];
+				let value	= keyValuePair[i+1];
+				if( value !== null && value !== undefined ) {
+					this.spot[x][y][z][key] = value;
+				}
 			}
 			return this;
-		}
-		getBlock(x,y,z) {
-			let block = this.getVal(x,y,z,'block');
-			return block === undefined ? this.blockType.UNKNOWN : block || this.blockType.UNKNOWN;
-		}
-		getZoneId(x,y,z) {
-			let zoneId = this.getVal(x,y,z,'zoneId');
-			return zoneId === undefined ? NO_ZONE : zoneId || NO_ZONE;
 		}
 		areaXY() {
 			return this.xLen * this.yLen;
@@ -165,19 +238,6 @@ Module.add('map3d',function(extern) {
 					}
 				}
 			}
-			return this;
-		}
-		fill(block,zoneId) {
-			this.traverse( (x,y,z) => this.setVal(x,y,z,block,zoneId) );
-			return this;
-		}
-		fillWeak(block,zoneId) {
-			this.traverse( (x,y,z) => {
-				let block = this.getBlock(x,y,z);
-				if( !block || block.isUnknown ) {
-					this.setVal(x,y,z,block,zoneId);
-				}
-			});
 			return this;
 		}
 		getKnownExtents() {

@@ -94,9 +94,33 @@ Module.add('dataWright',function() {
 
 	let Driver = {};
 
+	class BlockMap extends Map3d {
+		getBlock(x,y,z) {
+			let block = this.getVal(x,y,z,'block');
+			return block === undefined ? this.blockType.UNKNOWN : block || this.blockType.UNKNOWN;
+		}
+		getZoneId(x,y,z) {
+			let zoneId = this.getVal(x,y,z,'zoneId');
+			return zoneId === undefined ? NO_ZONE : zoneId || NO_ZONE;
+		}
+		fill(block,zoneId) {
+			this.traverse( (x,y,z) => this.setVal(x,y,z,'block',block,'zoneId',zoneId) );
+			return this;
+		}
+		fillWeak(block,zoneId) {
+			this.traverse( (x,y,z) => {
+				let block = this.getBlock(x,y,z);
+				if( !block || block.isUnknown ) {
+					this.setVal(x,y,z,'block',block,'zoneId',zoneId);
+				}
+			});
+			return this;
+		}
+	}
+
 	Driver.Base = class {
-		constructor(map3d) {
-			this.map3d  = map3d;
+		constructor(blockMap) {
+			this.blockMap  = blockMap;
 			this.headStack = [new Head()];
 			this.nodeList = new NodeList();
 			this.zoneList = new ZoneList();
@@ -124,10 +148,10 @@ Module.add('dataWright',function() {
 			return newZone;
 		}
 		getBlock(x,y,z,block)  {
-			return this.map3d.getBlock( x, y, z );
+			return this.blockMap.getBlock( x, y, z );
 		}
 		setBlock(x,y,z,block) {
-			return this.map3d.setVal( x, y, z, block, this.zone.zoneId );
+			return this.blockMap.setVal( x, y, z, 'block', block, 'zoneId', this.zone.zoneId );
 		}
 		get mapAccess() {
 			return [this.getBlock.bind(this), this.setBlock.bind(this)];
@@ -145,6 +169,38 @@ Module.add('dataWright',function() {
 		}
 	}
 
+	let PathStraight = (roomMaker) => {
+		let d = roomMaker.roomLen;
+
+	}
+/*
+RoomPathRecipe.PaperclipRight = ()=>{
+
+	let pr = new PathRecipe();
+	let a = Rand.intRange(0,5);
+	let b = Rand.intRange(0,5);
+
+	pr
+		.stairRangeBegin()
+		.forward(3+a)
+		.left()
+		.forward(1+b)
+		.left()
+		.forward(2+rand(0,Math.min(0,a-1)))
+		.stairRangeEnd()
+		.stairChoose('up')
+		.left()
+		.forward(2+b+rand(0,3))
+		.makeExit()
+		.finishRoom()
+	;
+
+	return pr;
+}
+*/
+
+
+
 	class RoomMaker {
 		constructor() {
 			this.zTarget = null;
@@ -160,22 +216,26 @@ Module.add('dataWright',function() {
 			this.vStride = this.roomControls.vStride;
 			this.wStride = this.roomControls.wStride;
 			this.nodeList = new NodeList();
-			this.extents = null;
+			this.oRect3d  = new OrientedRect3d();
 
 			return this;
 		}
 
-		onBloatStep() {
-			if( justTurned ) {
-				this.bloatL = Rand.intRange(0,3);
-				this.bloatR = Rand.intRange(0,3);
-				if( Rand.chance100(50) ) this.squareTheCorner();
-			}
-			if( Rand.chance100(33) ) {
-				this.bloatL += Rand.intRange(0,2) * (this.bloatL >= 3 ? -1 : 1);
-				this.bloatR += Rand.intRange(0,2) * (this.bloatR >= 3 ? -1 : 1);
-			}
+		pickSize() {
+			let length = this.uStride * (3+Rand.intRange(0,7)*2);
+			let width  = this.uStride * (3+Rand.intRange(0,7)*2);
+			let zDeep  = 0;
+			let zTall  = this.vStride * Rand.intRange(1,4);
+
+			this.oRect3d.set(
+				this.head.x, this.head.y, this.head.z,
+				this.head.facing,
+				length,
+				width,
+				zDeep, zTall
+			);
 		}
+
 		advance() {
 			this.x += Dir.add[this.head.facing].x;
 			this.y += Dir.add[this.head.facing].y;
@@ -257,7 +317,6 @@ Module.add('dataWright',function() {
 			let head = this.head;
 			let rc   = this.roomControls;
 			this.extents = new Rect3d().set(head.x,head.y,head.z,0,0,0);
-			let maxReps = 3*4*5;
 
 			head.facing = Dir.EAST;
 			head.width = this.wStride;
@@ -275,6 +334,7 @@ Module.add('dataWright',function() {
 
 			this.step( "FLOOR", {isFloor: true, isEntry: true});
 
+			let maxReps = 3*4*5;
 			while( true && maxReps-- > 0) {
 				head.slope = 0;
 				while( head.dist > 0 ) {
@@ -338,6 +398,16 @@ Module.add('dataWright',function() {
 
 		buildSupports() {
 		}
+
+		build() {
+			this.pickSize();
+			let n = new Node().set( this.roomOrigin.x, this.roomOrigin.y, this.roomOrigin.z, this.roomOrigin.facing );
+			let 
+
+			//this.recipe = new 
+			this.buildRoomPath();
+			this.buildMembrane();
+		}
 	}
 
 	let roomControlsDefault = ()=>{
@@ -362,14 +432,14 @@ Module.add('dataWright',function() {
 
 
 	Driver.StraightLine = class extends Driver.Base {
-		init(map3d,pathLength,pathControls) {
-			this.map3d = map3d;
+		init(blockMap,pathLength,pathControls) {
+			this.blockMap = blockMap;
 			// set( x, y, z, facing, dist, width, loft, slope )
 			let aLittleDistanceToAllowStubs = 8*5;
 			this.head.set(
-				this.map3d.xMin+aLittleDistanceToAllowStubs,
-				this.map3d.yHalf,
-				this.map3d.zHalf,
+				this.blockMap.xMin+aLittleDistanceToAllowStubs,
+				this.blockMap.yHalf,
+				this.blockMap.zHalf,
 				Dir.EAST, 0, 3, 5, 0 );
 			this.pathControls = Object.assign( new PathControls().setDefaults(), pathControls );
 			this.remaining    = pathLength;
@@ -418,15 +488,13 @@ Module.add('dataWright',function() {
 		}
 
 		buildStubs() {
-			this.stubMaker.buildStubs(this.map3d,this.zone.stubCandidate,this.head,this.mapAccess);
+			this.stubMaker.buildStubs(this.blockMap,this.zone.stubCandidate,this.head,this.mapAccess);
 		}
 
 		buildRoom() {
 			//debugger;
 			this.zoneCreate();
-			this.roomMaker.buildRoomPath();
-			//this.roomMaker.buildBloat();
-			this.roomMaker.buildMembrane();
+			this.roomMaker.build();
 			this.remaining = 0;
 		}
 
@@ -443,11 +511,11 @@ Module.add('dataWright',function() {
 		constructor() {
 		}
 		init(xLen,yLen,zLen,pathLength,pathControls) {
-			this.map3d = new Map3d(BlockType);
-			this.map3d.set(0,0,0,xLen,yLen,zLen);
+			this.blockMap = new BlockMap(BlockType);
+			this.blockMap.set(0,0,0,xLen,yLen,zLen);
 
 			this.driver = new Driver.StraightLine();
-			this.driver.init(this.map3d,pathLength,pathControls);
+			this.driver.init(this.blockMap,pathLength,pathControls);
 			return this;
 		}
 		tick() {
@@ -455,7 +523,7 @@ Module.add('dataWright',function() {
 				while( !this.driver.isDone ) {
 					this.driver.advance();
 				}
-				this._renderFn(this.map3d);
+				this._renderFn(this.blockMap);
 			}
 		}
 	}

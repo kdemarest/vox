@@ -149,11 +149,11 @@ function mapGenerate() {
 	return masonMap.renderToString();
 }
 
-let wrightToWorld = (map,world) => {
+let wrightToWorld = (blockMap,world) => {
 	world.bulkChangeBegin();
 	let count = 0;
-	map.traverse( (x,y,z) => {
-		let b = map.getBlock(x,y,z);
+	blockMap.traverse( (x,y,z) => {
+		let b = blockMap.getBlock(x,y,z);
 		console.assert(b);
 		if( world.contains(x,y,z) ) {
 			world.setBlock(x,y,z,b);
@@ -215,7 +215,7 @@ RoomBrush
 	}
 	let wright = new Wright().init( 24*8, 24*8, 24*8, pathLength=20*8, pathControls );
 
-	world.init(wright.map3d.xLen,wright.map3d.yLen,wright.map3d.zLen);
+	world.init(wright.blockMap.xLen,wright.blockMap.yLen,wright.blockMap.zLen);
 	world.createFlatWorld( 30 );	// dirt below, air above.
 	brainlessLight(world);
 	let head = wright.driver.head;
@@ -235,7 +235,7 @@ RoomBrush
 	let canvas = document.getElementById('renderSurface');
 	let controls = new PlayerControls(canvas,player.body);
 
-	wright._renderFn = (map) => wrightToWorld(map,world);
+	wright._renderFn = (blockMap) => wrightToWorld(blockMap,world);
 
 	window.tickCall = function() {
 		var time = new Date().getTime() / 1000.0;

@@ -30,6 +30,19 @@ Module.add('head',function() {
 			this.y += Dir.add[dir].y * dist;
 			this.z += slope * dist;
 		}
+		forward(dist) {
+			this.x += Dir.add[this.facing].x * dist;
+			this.y += Dir.add[this.facing].y * dist;
+			return this;
+		}
+		left() {
+			this.facing = Dir.left(this.facing);
+			return this;
+		}
+		right() {
+			this.facing = Dir.right(this.facing);
+			return this;
+		}
 	}
 
 	class Head extends Node {
@@ -73,7 +86,8 @@ Module.add('head',function() {
 	}
 
 	return {
-		Head: Head
+		Node: Node,
+		Head: Head,
 	}
 
 });

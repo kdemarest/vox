@@ -45,7 +45,7 @@ Module.add('makerStub',function() {
 			return stubLayout;
 		}
 
-		buildStubs(map3d,stubCandidate,head,mapAccess) {
+		buildStubs(blockMap,stubCandidate,head,mapAccess) {
 
 			let stubLayout = this.makeStubLayout( stubCandidate, head );
 			let preferSeed = null;
@@ -54,7 +54,7 @@ Module.add('makerStub',function() {
 				let stub = stubLayout[index];
 				//debugger;
 				let rakeReach = (new RakeReach()).set( stub.facing, stub.x, stub.y, stub.z );
-				let reach = rakeReach.detect(map3d,stub.u,stub.uToEnd);
+				let reach = rakeReach.detect(blockMap,stub.u,stub.uToEnd);
 				let seedList = this.seedPriorityList.filter( seedType => seedType.isStub && seedType.fitsReach(reach) );
 
 				//console.log('picking from '+seedList.length+' seeds.' );

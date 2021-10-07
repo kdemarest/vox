@@ -17,6 +17,11 @@ Module.add('map2d',function(extern) {
 			this.SOUTH = 4;
 			this.WEST  = 6;
 		}
+		translate(x,y,dir,dist) {
+			x += this.add[dir].x * dist;
+			y += this.add[dir].y * dist;
+			return [x,y];
+		}
 		left(dir) {
 			console.assert( this.validate(dir) );
 			return (dir+8-2) % 8;

@@ -99,7 +99,7 @@ Module.add('rake',function() {
 			this.z = z;
 			return this;
 		}
-		detect(map3d,limit0,limit1) {
+		detect(blockMap,limit0,limit1) {
 			let maxReach = 16;
 			let reach = [];
 
@@ -117,8 +117,8 @@ Module.add('rake',function() {
 				while( Math.abs(iOffset[i]) < lateralLimit ) {
 					let x = this.x + ahead.x*d - right.x*iOffset[i];
 					let y = this.y + ahead.y*d - right.y*iOffset[i];
-					let block = map3d.getBlock( x, y, this.z );
-					if( !map3d.contains(x,y,this.z) || (!mustBeWall && !block.isUnknown) || (mustBeWall && block.passable) ) {
+					let block = blockMap.getBlock( x, y, this.z );
+					if( !blockMap.contains(x,y,this.z) || (!mustBeWall && !block.isUnknown) || (mustBeWall && block.passable) ) {
 						lateralLimit = Math.abs( iOffset[i] );
 						break;
 					}

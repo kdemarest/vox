@@ -157,13 +157,13 @@ Module.add('brush',function() {
 		sample2d(textureName,u,v,uStride,vStride) {
 			if( !this.textureHash[textureName] ) {
 				let t = new TextMapParser( this[textureName].textMap );
-				let m = new Map2d(BlockType,'UNKNOWN').set(0,0,t.dimensions[0],t.dimensions[1]);
+				let map2d = new Map2d(BlockType,'UNKNOWN').set(0,0,t.dimensions[0],t.dimensions[1]);
 				t.parse( (x,y,index,symbol) => {
 					let block = this[textureName].lookup[symbol];
 					console.assert(block);
-					m.setVal( x, y, block );
+					map2d.setVal( x, y, block );
 				});
-				this.textureHash[textureName] = m;
+				this.textureHash[textureName] = map2d;
 			}
 
 			let texture = this.textureHash[textureName];
